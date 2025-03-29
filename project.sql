@@ -103,4 +103,99 @@ CREATE TABLE Messages (
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
+-- View: User Profile
+CREATE view otherUsersProfile AS
+SELECT UserID, FullName, Gender, Email, PhoneNumber, CreatedAt
+FROM Users U;
 
+--procedure: profile details
+CREATE PROCEDURE GetUserProfileDetails
+    @UserID INT
+AS
+BEGIN
+    With profiledetails as (SELECT UserID, FullName, Gender, Email, PhoneNumber, CreatedAt
+    FROM Users
+    WHERE UserID = @UserID)
+Select * from profiledetails;
+END;
+
+-- User's Items (Posts)
+CREATE PROCEDURE GetUserItemDetails
+    @UserID INT
+AS
+BEGIN
+    SELECT i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
+           i.ItemLocation, i.DateReported, i.ImageURL
+    FROM Items i
+    LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
+    WHERE i.UserID = @UserID;
+
+END;
+
+ -- User's Claims
+CREATE PROCEDURE GetUserClaimDetails
+    @UserID INT
+AS
+BEGIN
+    SELECT c.ClaimID, c.ItemID, i.Title AS ClaimedItem, c.ClaimDetails, 
+           c.ClaimsStatus, c.CreatedAt
+    FROM Claims c
+    JOIN Items i ON c.ItemID = i.ItemID
+    WHERE c.UserID = @UserID;
+END;
+
+
+--user login
+CREATE PROCEDURE GetUserCredentials
+    @Email NVARCHAR(255)
+AS
+BEGIN
+   
+    SELECT UserID, FullName, Email, PasswordHash, UserRole
+    FROM Users
+    WHERE Email = @Email;
+END;
+
+--insert user
+CREATE PROCEDURE InsertUser
+    @FullName NVARCHAR(255),
+    @Gender CHAR(1),
+    @Email NVARCHAR(255),
+    @PasswordHash NVARCHAR(255),
+    @PhoneNumber NVARCHAR(11),
+    @OAuthProvider NVARCHAR(50) = NULL,
+    @OAuthID NVARCHAR(255) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Insert new user
+    INSERT INTO Users (FullName, Gender, Email, PasswordHash, PhoneNumber, OAuthProvider, OAuthID)
+    VALUES (@FullName, @Gender, @Email, @PasswordHash, @PhoneNumber, @OAuthProvider, @OAuthID);
+
+    -- Return the newly created user ID
+    SELECT SCOPE_IDENTITY() AS UserID;
+END;
+
+select * from Users;
+
+-- Stored Procedure: Update User Information
+CREATE PROCEDURE UpdateUser
+    @UserID INT,
+    @FullName NVARCHAR(255),
+    @PasswordHash NVARCHAR(255),
+    @PhoneNumber NVARCHAR(11)
+AS
+BEGIN
+    UPDATE Users 
+    SET FullName = @FullName, PasswordHash = @PasswordHash, PhoneNumber = @PhoneNumber 
+    WHERE UserID = @UserID;
+END;
+
+-- Stored Procedure: Delete a User
+CREATE PROCEDURE DeleteUser
+    @UserID INT
+AS
+BEGIN
+    DELETE FROM Users WHERE UserID = @UserID;
+END;
