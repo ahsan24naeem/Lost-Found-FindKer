@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import userRoutes from './userRoutes.js';
 import postRoutes from './postRoutes.js';
+import claimRoutes from './claimRoutes.js';
+import messageRoutes from './messageRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -19,6 +21,8 @@ app.use(cors());
 // Routes
 app.use('/api/user', userRoutes); // Use user routes
 app.use('/api/post', postRoutes);
+app.use('/api/claim', claimRoutes);
+app.use('/api/message', messageRoutes);
 
 // Test API Route
 app.get('/', (req, res) => {
