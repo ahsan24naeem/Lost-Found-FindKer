@@ -345,6 +345,23 @@ BEGIN
     DELETE FROM Items WHERE ItemID = @ItemID;
 END;
 
+--search a post
+CREATE PROCEDURE SearchPosts
+    @SearchTerm NVARCHAR(100)
+AS
+BEGIN
+    SELECT i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
+           i.ItemLocation, i.DateReported, i.ImageURL, u.FullName AS PostedBy
+    FROM Items i
+    JOIN Users u ON i.UserID = u.UserID
+    LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
+    WHERE i.Title LIKE '%' + @SearchTerm + '%'
+       OR i.ItemDescription LIKE '%' + @SearchTerm + '%'
+       OR i.ItemLocation LIKE '%' + @SearchTerm + '%'
+       OR c.CategoryName LIKE '%' + @SearchTerm + '%'
+    ORDER BY i.DateReported DESC;
+END;
+
 --Procedure: Claims 
 CREATE PROCEDURE ClaimItem
     @ItemID INT,

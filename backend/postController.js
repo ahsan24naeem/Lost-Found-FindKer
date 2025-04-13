@@ -91,3 +91,19 @@ export const deletePost = async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 };
+
+export const searchPosts = async (req, res) => {
+    const { term } = req.query;
+
+    try {
+        const pool = await sql.connect(dbConfig);
+        const result = await pool.request()
+            .input("SearchTerm", sql.NVarChar, term)
+            .execute("SearchPosts");
+
+        res.status(200).json(result.recordset);
+    } catch (error) {
+        console.error("Error searching posts:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+};
