@@ -7,6 +7,7 @@ import userRoutes from './userRoutes.js';
 import postRoutes from './postRoutes.js';
 import claimRoutes from './claimRoutes.js';
 import messageRoutes from './messageRoutes.js';
+import notificationRoutes from './notificationRoutes.js';
 
 dotenv.config();
 connectDB();
