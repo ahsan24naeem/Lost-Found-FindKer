@@ -23,6 +23,7 @@ app.use('/api/user', userRoutes); // Use user routes
 app.use('/api/post', postRoutes);
 app.use('/api/claim', claimRoutes);
 app.use('/api/message', messageRoutes);
+app.use('/api/notification', notificationRoutes);
 
 // Test API Route
 app.get('/', (req, res) => {
