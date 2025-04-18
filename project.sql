@@ -1,5 +1,5 @@
-create database project;
-use project;
+create database projectDB;
+use projectDB;
 
 
 CREATE TABLE Users (
@@ -107,6 +107,7 @@ CREATE TABLE Messages (
 
 -- Insert into Users
 INSERT INTO Users (FullName, Gender, Email, PasswordHash, PhoneNumber, OAuthProvider, OAuthID, UserRole) VALUES
+('Ahsan Naeem', 'F', 'l230517@lhr.nu.edu.pk', 'Ahsan', '03248403266', NULL, NULL, 'Admin'),
 ('Ali Khan', 'M', 'ali.khan@lhr.nu.edu.pk', 'hashed_password1', '03123456789', NULL, NULL, 'User'),
 ('Sara Ahmed', 'F', 'sara.ahmed@lhr.nu.edu.pk', 'hashed_password2', '03211234567', NULL, NULL, 'Admin'),
 ('Omar Farooq', 'M', 'omar.farooq@lhr.nu.edu.pk', 'hashed_password3', '03001112233', 'Google', 'google123', 'User'),
@@ -127,7 +128,7 @@ select * from users
 INSERT INTO Items (UserID, Title, ItemDescription, CategoryID, ItemStatus, ItemLocation, ImageURL, QRCode, PrivateDetails) VALUES
 (1, 'Lost iPhone', 'Black iPhone 12 lost near cafeteria', 1, 'Lost', 'University Cafeteria', NULL, NULL, 'Serial No: 12345'),
 (2, 'Found Wallet', 'Brown leather wallet with ID card inside', 2, 'Found', 'Library', NULL, NULL, 'Contains Student ID'),
-(3, 'Lost Jacket', 'Blue denim jacket with brand label', 3, 'Lost', 'Parking Lot', NULL, NULL, 'Brand: Levi’s'),
+(3, 'Lost Jacket', 'Blue denim jacket with brand label', 3, 'Lost', 'Parking Lot', NULL, NULL, 'Brand: Leviï¿½s'),
 (4, 'Found Notebook', 'Green spiral notebook with handwritten notes', 4, 'Found', 'Lecture Hall B', NULL, NULL, 'Name on first page'),
 (5, 'Lost Watch', 'Silver analog watch with black strap', 5, 'Lost', 'Sports Complex', NULL, NULL, 'Engraved initials: HR');
 
@@ -136,7 +137,7 @@ INSERT INTO Claims (ItemID, UserID, ClaimDetails) VALUES
 (1, 3, 'It belongs to me, I can unlock it'),
 (2, 1, 'My wallet, it has my ID'),
 (3, 4, 'I lost this jacket yesterday'),
-(4, 2, 'That’s my notebook, it has my notes'),
+(4, 2, 'Thatï¿½s my notebook, it has my notes'),
 (5, 5, 'My watch, has initials HR engraved');
 
 -- Insert into Notifications
@@ -184,7 +185,7 @@ INSERT INTO Messages (SenderID, ReceiverID, PostID, MessageText) VALUES
 (1, 3, 1, 'Hey, I think this is my phone!'),
 (2, 1, 2, 'I found a wallet, is this yours?'),
 (3, 4, 3, 'Can you tell me more about the jacket?'),
-(4, 5, 4, 'I found a notebook, what’s written inside?'),
+(4, 5, 4, 'I found a notebook, whatï¿½s written inside?'),
 (5, 1, 5, 'I lost a watch, does it have my initials?');
 
 -- View: User Profile
@@ -318,6 +319,7 @@ BEGIN
     ORDER BY c.CreatedAt DESC;
 END;
 
+go;
 -- Stored Procedure: Create a New Post
 
 select * from Items;
@@ -406,6 +408,7 @@ BEGIN
         INSERT (ClaimID, UserID, VoteType) VALUES (@ClaimID, @UserID, @VoteType);
 END;
 
+go
 -- Stored Procedure: View Claim Verification Status
 CREATE PROCEDURE GetClaimVotes
     @ClaimID INT
@@ -417,6 +420,7 @@ BEGIN
     WHERE ClaimID = @ClaimID;
 END;
 
+go
 --Procedure: delete claim 
 CREATE PROCEDURE DeleteClaim
     @ClaimID INT,
@@ -438,7 +442,7 @@ BEGIN
     END
 END;
 
-
+go
 -- Stored Procedure: Send a Message
 CREATE PROCEDURE SendMessage
     @SenderID INT,
@@ -452,7 +456,7 @@ BEGIN
 END;
 
 
-
+go
 -- Stored Procedure: Retrieve Messages Between Two Users
 CREATE PROCEDURE GetMessagesBetweenUsers
     @UserID1 INT,
@@ -469,6 +473,7 @@ BEGIN
     ORDER BY m.CreatedAt;
 END;
 
+go
 -- Stored Procedure: Retrieve Notifications for a User
 CREATE PROCEDURE GetUserNotifications
     @UserID INT
@@ -480,7 +485,7 @@ BEGIN
     ORDER BY CreatedAt DESC;
 END;
 
-
+go
 -- Procedure: Add Notification When a New Post is Create
 CREATE PROCEDURE AddPostNotification
     @ItemID INT,
@@ -496,6 +501,7 @@ BEGIN
 END;
 GO
 
+go 
 -- Trigger: Automatically Add Notification After New Item Inserted
 CREATE TRIGGER trg_AddPostNotification
 ON Items

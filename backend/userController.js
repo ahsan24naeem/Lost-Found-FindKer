@@ -9,71 +9,113 @@ dotenv.config();
 // Login function
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
+    console.log('Login attempt for:', email);
 
     try {
         // Connect to database
         let pool = await sql.connect(dbConfig);
+        console.log('Database connected successfully');
         
         // Execute stored procedure
         let result = await pool
             .request()
             .input("Email", sql.NVarChar, email)
             .execute("GetUserCredentials");
+        
+        console.log('Query result:', result.recordset);
 
         // Check if user exists
         if (result.recordset.length === 0) {
+            console.log('No user found with email:', email);
             return res.status(401).json({ error: "Invalid email or password"});
         }
 
         const user = result.recordset[0];
+        console.log('User found:', { 
+            userId: user.UserID, 
+            email: user.Email, 
+            role: user.UserRole 
+        });
 
         // Compare hashed passwords
         const isMatch = await bcrypt.compare(password, user.PasswordHash);
+        console.log('Password match:', isMatch);
+        
         if (!isMatch) {
+            console.log('Password does not match');
             return res.status(401).json({ error: "Invalid email or password" });
         }
 
         // Generate JWT Token
         const token = jwt.sign(
             { userId: user.UserID, email: user.Email, role: user.UserRole },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'your-secret-key', // Fallback secret key
             { expiresIn: "1h" }
         );
 
-        res.json({ message: "Login successful", token });
+        console.log('Login successful, token generated');
+        res.json({ 
+            message: "Login successful", 
+            token,
+            userId: user.UserID,
+            email: user.Email,
+            role: user.UserRole
+        });
     } catch (error) {
-        console.error("Login error:", error);
-        res.status(500).json({ error: "Server error" });
+        console.error("Login error details:", {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            number: error.number
+        });
+        res.status(500).json({ 
+            error: "Server error",
+            details: error.message 
+        });
     }
 };
 
 // User Registration
 export const registerUser = async (req, res) => {
-    const { fullName, gender, email, password, phoneNumber, oauthProvider, oauthID } = req.body;
+    const { fullName, email, password, phoneNumber, gender } = req.body;
 
     try {
-        // Hash the password before storing
+        // Connect to database
+        let pool = await sql.connect(dbConfig);
+        
+        // Check if user already exists
+        const checkResult = await pool
+            .request()
+            .input("Email", sql.NVarChar, email)
+            .query("SELECT Email FROM Users WHERE Email = @Email");
+
+        if (checkResult.recordset.length > 0) {
+            return res.status(400).json({ error: "Email already registered" });
+        }
+
+        // Hash the password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Connect to database
-        let pool = await sql.connect(dbConfig);
-
-        // Execute the stored procedure
-        let result = await pool
+        // Insert new user
+        const result = await pool
             .request()
             .input("FullName", sql.NVarChar, fullName)
-            .input("Gender", sql.Char, gender)
             .input("Email", sql.NVarChar, email)
             .input("PasswordHash", sql.NVarChar, hashedPassword)
-            .input("PhoneNumber", sql.NVarChar, phoneNumber)
-            .input("OAuthProvider", sql.NVarChar, oauthProvider || null)
-            .input("OAuthID", sql.NVarChar, oauthID || null)
-            .execute("InsertUser");
+            .input("PhoneNumber", sql.NVarChar, phoneNumber || null)
+            .input("Gender", sql.Char, gender || null)
+            .query(`
+                INSERT INTO Users (FullName, Email, PasswordHash, PhoneNumber, Gender)
+                VALUES (@FullName, @Email, @PasswordHash, @PhoneNumber, @Gender);
+                SELECT SCOPE_IDENTITY() AS UserID;
+            `);
+
+        const userId = result.recordset[0].UserID;
 
         res.status(201).json({
             message: "User registered successfully",
-            userId: result.recordset[0].UserID,
+            userId: userId
         });
     } catch (error) {
         console.error("Registration error:", error);

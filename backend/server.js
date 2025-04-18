@@ -7,7 +7,6 @@ import userRoutes from './userRoutes.js';
 import postRoutes from './postRoutes.js';
 import claimRoutes from './claimRoutes.js';
 import messageRoutes from './messageRoutes.js';
-import notificationRoutes from './notificationRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -17,14 +16,18 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // Your frontend URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Routes
 app.use('/api/user', userRoutes); // Use user routes
 app.use('/api/post', postRoutes);
 app.use('/api/claim', claimRoutes);
 app.use('/api/message', messageRoutes);
-app.use('/api/notification', notificationRoutes);
 
 // Test API Route
 app.get('/', (req, res) => {
