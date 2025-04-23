@@ -9,7 +9,7 @@ export default function HeroSection() {
           <div className="flex flex-col justify-center space-y-4">
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
               Lost Something? <br />
-              <span className="text-primary">Find It</span> Here.
+              <span className="text-primary">FindKer</span> is Here.
             </h1>
             <p className="max-w-[600px] text-muted-foreground md:text-xl">
               A centralized platform where you can report lost items, find recovered items, and connect with your

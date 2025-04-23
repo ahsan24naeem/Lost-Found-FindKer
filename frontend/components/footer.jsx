@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary">FindIt</span>
+              <span className="text-2xl font-bold text-primary">FindKer</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               A centralized digital platform where users can report lost or found items, facilitating efficient recovery
@@ -91,7 +91,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} FindIt. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} FindKer. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -7,12 +7,18 @@ import userRoutes from './userRoutes.js';
 import postRoutes from './postRoutes.js';
 import claimRoutes from './claimRoutes.js';
 import messageRoutes from './messageRoutes.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Get the directory name
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Middleware
 app.use(express.json());
@@ -22,6 +28,12 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Serve static files from the uploads directory
+app.use('/uploads', (req, res, next) => {
+  console.log(`Image request: ${req.path}`);
+  next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/user', userRoutes); // Use user routes

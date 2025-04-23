@@ -2,112 +2,77 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Bell, Menu, Search, X } from "lucide-react"
+import { Menu, Search, X, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/context/auth-context"
 import { useRouter } from "next/navigation"
+import NotificationsDropdown from "@/components/notifications-dropdown"
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(true) // We're using our auth context instead
+  const [searchQuery, setSearchQuery] = useState("")
 
   const handleLogout = () => {
     logout()
     router.push("/")
   }
 
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link href="/home" className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-primary">FindIt</span>
+          <Link href="/home" className="text-2xl font-bold text-primary">
+            FindKer
           </Link>
         </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link href="/home" className="text-sm font-medium hover:text-primary">
-            Home
-          </Link>
-          <Link href="/lost" className="text-sm font-medium hover:text-primary">
-            Lost Items
-          </Link>
-          <Link href="/found" className="text-sm font-medium hover:text-primary">
-            Found Items
-          </Link>
-          <Link href="/post" className="text-sm font-medium hover:text-primary">
-            Post Item
-          </Link>
-          <Link href="/about" className="text-sm font-medium hover:text-primary">
-            About
-          </Link>
-        </nav>
+        <div className="hidden md:flex items-center gap-4 flex-1 justify-center max-w-xl">
+          <form onSubmit={handleSearch} className="w-full">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search items..."
+                className="w-full pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Button type="submit" variant="ghost" size="sm" className="absolute right-0 top-0 h-full">
+                Search
+              </Button>
+            </div>
+          </form>
+        </div>
 
         <div className="hidden md:flex items-center gap-4">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search items..." className="w-[200px] pl-8 md:w-[200px] lg:w-[300px]" />
-          </div>
-
           {user ? (
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                  3
-                </span>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg" alt={user?.name || "User"} />
-                    <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-                  </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <Link href="/profile" className="w-full">
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/my-items" className="w-full">
-                      My Items
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Link href="/settings" className="w-full">
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <NotificationsDropdown>
+                <DropdownMenuItem asChild>
+                  <Link href="/admin">
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>Admin Panel</span>
+                  </Link>
+                </DropdownMenuItem>
+              </NotificationsDropdown>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => router.push("/")}>
+              <Button variant="outline" onClick={() => router.push("/login")}>
                 Log in
               </Button>
-              <Button onClick={() => router.push("/")}>Sign up</Button>
+              <Button onClick={() => router.push("/register")}>Sign up</Button>
             </div>
           )}
         </div>
@@ -121,6 +86,18 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="container md:hidden py-4 border-t">
+          <form onSubmit={handleSearch} className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search items..."
+                className="w-full pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </form>
           <nav className="flex flex-col gap-4">
             <Link href="/home" className="text-sm font-medium hover:text-primary" onClick={() => setIsMenuOpen(false)}>
               Home
@@ -134,19 +111,22 @@ export default function Navbar() {
             <Link href="/post" className="text-sm font-medium hover:text-primary" onClick={() => setIsMenuOpen(false)}>
               Post Item
             </Link>
+            <Link
+              href="/profile"
+              className="text-sm font-medium hover:text-primary"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Profile
+            </Link>
             <Link href="/about" className="text-sm font-medium hover:text-primary" onClick={() => setIsMenuOpen(false)}>
               About
             </Link>
-            <div className="relative mt-2">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input type="search" placeholder="Search items..." className="w-full pl-8" />
-            </div>
             {!user && (
               <div className="flex flex-col gap-2 mt-4">
-                <Button variant="outline" onClick={() => router.push("/")}>
+                <Button variant="outline" onClick={() => router.push("/login")}>
                   Log in
                 </Button>
-                <Button onClick={() => router.push("/")}>Sign up</Button>
+                <Button onClick={() => router.push("/register")}>Sign up</Button>
               </div>
             )}
             {user && (

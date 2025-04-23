@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ChevronLeft, User, Bell, Lock, Globe, Palette, HelpCircle, LogOut } from "lucide-react"
+import { ChevronLeft, User, Lock, Globe, Palette, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,9 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ThemeToggle } from "@/components/theme-toggle"
 import MobileNav from "@/components/mobile-nav"
 import SidebarNav from "@/components/sidebar-nav"
+import { useToast } from "@/hooks/use-toast"
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("account")
+  const { toast } = useToast()
 
   // Mock user data
   const user = {
@@ -27,6 +29,13 @@ export default function SettingsPage() {
     phone: "+1 (555) 123-4567",
     avatar: "/placeholder.svg?height=200&width=200",
     bio: "Lost and found enthusiast. Helping people reconnect with their belongings since 2020.",
+  }
+
+  const handleSaveChanges = () => {
+    toast({
+      title: "Changes Saved",
+      description: "Your settings have been updated successfully.",
+    })
   }
 
   return (
@@ -69,13 +78,6 @@ export default function SettingsPage() {
                     Account
                   </TabsTrigger>
                   <TabsTrigger
-                    value="notifications"
-                    className="justify-start rounded-none border-l-2 border-transparent px-3 py-2 text-left data-[state=active]:border-primary"
-                  >
-                    <Bell className="mr-2 h-4 w-4" />
-                    Notifications
-                  </TabsTrigger>
-                  <TabsTrigger
                     value="privacy"
                     className="justify-start rounded-none border-l-2 border-transparent px-3 py-2 text-left data-[state=active]:border-primary"
                   >
@@ -96,13 +98,6 @@ export default function SettingsPage() {
                     <Globe className="mr-2 h-4 w-4" />
                     Language & Region
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="help"
-                    className="justify-start rounded-none border-l-2 border-transparent px-3 py-2 text-left data-[state=active]:border-primary"
-                  >
-                    <HelpCircle className="mr-2 h-4 w-4" />
-                    Help & Support
-                  </TabsTrigger>
                 </TabsList>
               </Tabs>
 
@@ -114,11 +109,9 @@ export default function SettingsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="account">Account</SelectItem>
-                    <SelectItem value="notifications">Notifications</SelectItem>
                     <SelectItem value="privacy">Privacy & Security</SelectItem>
                     <SelectItem value="appearance">Appearance</SelectItem>
                     <SelectItem value="language">Language & Region</SelectItem>
-                    <SelectItem value="help">Help & Support</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -182,87 +175,7 @@ export default function SettingsPage() {
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2">
                     <Button variant="outline">Cancel</Button>
-                    <Button>Save Changes</Button>
-                  </CardFooter>
-                </Card>
-              )}
-
-              {activeTab === "notifications" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notification Preferences</CardTitle>
-                    <CardDescription>Manage how you receive notifications</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium">Email Notifications</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="email-matches">Item Matches</Label>
-                          <Switch id="email-matches" defaultChecked />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="email-comments">Comments on Your Posts</Label>
-                          <Switch id="email-comments" defaultChecked />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="email-messages">Direct Messages</Label>
-                          <Switch id="email-messages" defaultChecked />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="email-followers">New Followers</Label>
-                          <Switch id="email-followers" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium">Push Notifications</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="push-matches">Item Matches</Label>
-                          <Switch id="push-matches" defaultChecked />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="push-comments">Comments on Your Posts</Label>
-                          <Switch id="push-comments" defaultChecked />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="push-messages">Direct Messages</Label>
-                          <Switch id="push-messages" defaultChecked />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="push-followers">New Followers</Label>
-                          <Switch id="push-followers" defaultChecked />
-                        </div>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium">SMS Notifications</h3>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="sms-matches">Item Matches</Label>
-                          <Switch id="sms-matches" />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="sms-messages">Direct Messages</Label>
-                          <Switch id="sms-messages" />
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="sms-claims">Item Claims</Label>
-                          <Switch id="sms-claims" defaultChecked />
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-end gap-2">
-                    <Button variant="outline">Cancel</Button>
-                    <Button>Save Changes</Button>
+                    <Button onClick={handleSaveChanges}>Save Changes</Button>
                   </CardFooter>
                 </Card>
               )}
@@ -313,7 +226,7 @@ export default function SettingsPage() {
                           <Label htmlFor="confirm-password">Confirm New Password</Label>
                           <Input id="confirm-password" type="password" />
                         </div>
-                        <Button className="mt-2" variant="outline">
+                        <Button className="mt-2" variant="outline" onClick={handleSaveChanges}>
                           Change Password
                         </Button>
                       </div>
@@ -405,7 +318,7 @@ export default function SettingsPage() {
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2">
                     <Button variant="outline">Reset to Default</Button>
-                    <Button>Save Changes</Button>
+                    <Button onClick={handleSaveChanges}>Save Changes</Button>
                   </CardFooter>
                 </Card>
               )}
@@ -494,71 +407,8 @@ export default function SettingsPage() {
                   </CardContent>
                   <CardFooter className="flex justify-end gap-2">
                     <Button variant="outline">Cancel</Button>
-                    <Button>Save Changes</Button>
+                    <Button onClick={handleSaveChanges}>Save Changes</Button>
                   </CardFooter>
-                </Card>
-              )}
-
-              {activeTab === "help" && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Help & Support</CardTitle>
-                    <CardDescription>Get help and support for using FindIt</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium">Frequently Asked Questions</h3>
-                      <div className="space-y-2">
-                        <Button variant="outline" className="w-full justify-start">
-                          How do I report a lost item?
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                          How do I claim a found item?
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                          How does the verification process work?
-                        </Button>
-                        <Button variant="outline" className="w-full justify-start">
-                          What should I do if I can't find my item?
-                        </Button>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium">Contact Support</h3>
-                      <div className="space-y-2">
-                        <Label htmlFor="support-subject">Subject</Label>
-                        <Input id="support-subject" placeholder="Enter subject" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="support-message">Message</Label>
-                        <Input id="support-message" placeholder="Describe your issue" />
-                      </div>
-                      <Button>Submit Support Request</Button>
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium">Legal</h3>
-                      <div className="space-y-2">
-                        <Button variant="link" className="h-auto p-0">
-                          Terms of Service
-                        </Button>
-                        <Button variant="link" className="h-auto p-0">
-                          Privacy Policy
-                        </Button>
-                        <Button variant="link" className="h-auto p-0">
-                          Cookie Policy
-                        </Button>
-                        <Button variant="link" className="h-auto p-0">
-                          Community Guidelines
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
                 </Card>
               )}
             </div>

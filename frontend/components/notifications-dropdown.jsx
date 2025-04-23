@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation"
 
 export default function NotificationsDropdown() {
   const [notifications, setNotifications] = useState([
@@ -77,7 +78,9 @@ export default function NotificationsDropdown() {
   ])
 
   const unreadCount = notifications.filter((notification) => !notification.read).length
+  const router = useRouter()
 
+  // Add a function to mark notifications as read
   const markAsRead = (id) => {
     setNotifications((prev) =>
       prev.map((notification) => {
@@ -87,6 +90,12 @@ export default function NotificationsDropdown() {
         return notification
       }),
     )
+
+    // Navigate to the appropriate page based on notification type
+    const notification = notifications.find((n) => n.id === id)
+    if (notification && notification.link) {
+      router.push(notification.link)
+    }
   }
 
   const markAllAsRead = () => {

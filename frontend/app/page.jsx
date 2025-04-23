@@ -1,342 +1,262 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/context/auth-context"
-import { Eye, EyeOff } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useToast } from "@/hooks/use-toast"
+import { Card, CardContent } from "@/components/ui/card"
+import { useAuth } from "@/context/auth-context"
 
-export default function AuthPage() {
-  const { login, signup } = useAuth()
-  const { toast } = useToast()
+export default function AboutPage() {
+  const { user } = useAuth()
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState("login")
-  const [showPassword, setShowPassword] = useState(false)
 
-  // Login form state
-  const [loginData, setLoginData] = useState({
-    email: "",
-    password: "",
-  })
-
-  // Signup form state
-  const [signupData, setSignupData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  })
-
-  const handleLoginChange = (e) => {
-    const { name, value } = e.target
-    setLoginData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleSignupChange = (e) => {
-    const { name, value } = e.target
-    setSignupData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-
-    // Basic validation
-    if (!loginData.email || !loginData.password) {
-        toast({
-            title: "Error",
-            description: "Please fill in all fields",
-            variant: "destructive",
-        });
-        return;
+  // If user is already logged in, redirect to home
+  useEffect(() => {
+    if (user) {
+      router.push("/home")
     }
-
-    try {
-        const response = await fetch('http://localhost:5000/api/user/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: loginData.email,
-                password: loginData.password,
-            }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'Login failed');
-        }
-
-        // Store the token in localStorage
-        localStorage.setItem('token', data.token);
-
-        // Update auth context with user data
-        login({
-            id: data.userId,
-            email: loginData.email,
-            role: data.role,
-            token: data.token,
-        });
-
-        toast({
-            title: "Success",
-            description: "You have been logged in successfully",
-        });
-
-        // Redirect to the home page
-        router.push('/home');
-    } catch (error) {
-        console.error('Login error:', error);
-        toast({
-            title: "Error",
-            description: error.message || "Failed to connect to server. Please try again later.",
-            variant: "destructive",
-        });
-    }
-};
-
-  const handleSignupSubmit = async (e) => {
-    e.preventDefault()
-
-    // Basic validation
-    if (!signupData.name || !signupData.email || !signupData.password || !signupData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (signupData.password !== signupData.confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      const response = await fetch('http://localhost:5000/api/user/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullName: signupData.name,
-          email: signupData.email,
-          password: signupData.password,
-          phoneNumber: "",
-          gender: "",
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
-
-      toast({
-        title: "Success",
-        description: "Your account has been created successfully",
-      });
-
-      // Switch to login tab after successful registration
-      setActiveTab("login");
-    } catch (error) {
-      console.error('Signup error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to connect to server. Please try again later.",
-        variant: "destructive",
-      });
-    }
-  }
-
-  const handleGuestLogin = () => {
-    login({
-      id: 999,
-      name: "Guest User",
-      email: "guest@example.com",
-    })
-
-    toast({
-      title: "Guest Access",
-      description: "You are now browsing as a guest",
-    })
-  }
+  }, [user, router])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/20 to-background p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary">FindIt</h1>
-          <p className="text-muted-foreground mt-2">Lost something? Find it here.</p>
+    <div className="min-h-screen flex flex-col">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-b from-primary/20 to-background py-16 px-4 text-center">
+        <div className="container mx-auto max-w-4xl">
+          <div className="flex justify-center mb-6">
+            <div className="flex items-center">
+              <div className="bg-primary text-primary-foreground p-3 rounded-lg mr-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+                  <circle cx="12" cy="12" r="4"></circle>
+                </svg>
+              </div>
+              {/* <h1 className="text-5xl font-bold text-primary">FindKer</h1> */}
+            </div>
+          </div>
+          <h2 className="text-3xl font-bold mb-4">Reunite with Your Lost Items</h2>
+          <p className="text-xl text-muted-foreground mb-8">
+            The easiest way to report lost items and find what you're looking for. Our platform connects people who have
+            lost items with those who have found them.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" asChild>
+              <Link href="/login">Sign In</Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/register">Create Account</Link>
+            </Button>
+          </div>
         </div>
-
-        <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 w-full mb-6">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="login">
-            <Card>
-              <CardHeader>
-                <CardTitle>Welcome back</CardTitle>
-                <CardDescription>Enter your credentials to access your account</CardDescription>
-              </CardHeader>
-              <form onSubmit={handleLoginSubmit}>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input
-                      id="login-email"
-                      name="email"
-                      type="email"
-                      placeholder="m@example.com"
-                      value={loginData.email}
-                      onChange={handleLoginChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="login-password">Password</Label>
-                      <Button
-                        variant="link"
-                        className="p-0 h-auto text-xs"
-                        onClick={() =>
-                          toast({
-                            title: "Password Reset",
-                            description: "This feature would send a password reset email in a real application.",
-                          })
-                        }
-                      >
-                        Forgot password?
-                      </Button>
-                    </div>
-                    <div className="relative">
-                      <Input
-                        id="login-password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={loginData.password}
-                        onChange={handleLoginChange}
-                        required
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        <span className="sr-only">Toggle password visibility</span>
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col space-y-2">
-                  <Button type="submit" className="w-full">
-                    Login
-                  </Button>
-                  <Button type="button" variant="outline" className="w-full" onClick={handleGuestLogin}>
-                    Continue as Guest
-                  </Button>
-                </CardFooter>
-              </form>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="signup">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create an account</CardTitle>
-                <CardDescription>Enter your information to create an account</CardDescription>
-              </CardHeader>
-              <form onSubmit={handleSignupSubmit}>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <Input
-                      id="signup-name"
-                      name="name"
-                      placeholder="John Doe"
-                      value={signupData.name}
-                      onChange={handleSignupChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      name="email"
-                      type="email"
-                      placeholder="m@example.com"
-                      value={signupData.email}
-                      onChange={handleSignupChange}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="signup-password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={signupData.password}
-                        onChange={handleSignupChange}
-                        required
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        <span className="sr-only">Toggle password visibility</span>
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm-password">Confirm Password</Label>
-                    <Input
-                      id="signup-confirm-password"
-                      name="confirmPassword"
-                      type="password"
-                      value={signupData.confirmPassword}
-                      onChange={handleSignupChange}
-                      required
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col space-y-2">
-                  <Button type="submit" className="w-full">
-                    Sign Up
-                  </Button>
-                  <Button type="button" variant="outline" className="w-full" onClick={handleGuestLogin}>
-                    Continue as Guest
-                  </Button>
-                </CardFooter>
-              </form>
-            </Card>
-          </TabsContent>
-        </Tabs>
       </div>
+
+      {/* Features Section */}
+      <div className="py-16 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <h2 className="text-3xl font-bold text-center mb-12">How FindKer Works</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary"
+                  >
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold mb-2">Report Lost Items</h3>
+                <p className="text-muted-foreground">
+                  Quickly create a detailed report about your lost item with photos and location information.
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary"
+                  >
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.3-4.3"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold mb-2">Find Items</h3>
+                <p className="text-muted-foreground">
+                  Browse through found items or search by category, location, and description to find what you've lost.
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="rounded-full bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary"
+                  >
+                    <path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2v5Z"></path>
+                    <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1"></path>
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold mb-2">Connect & Retrieve</h3>
+                <p className="text-muted-foreground">
+                  Message directly with the finder of your item and arrange to get your belongings back safely.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div className="bg-muted py-16 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            <div>
+              <h3 className="text-4xl font-bold text-primary mb-2">10,000+</h3>
+              <p className="text-muted-foreground">Items Found</p>
+            </div>
+            <div>
+              <h3 className="text-4xl font-bold text-primary mb-2">15,000+</h3>
+              <p className="text-muted-foreground">Active Users</p>
+            </div>
+            <div>
+              <h3 className="text-4xl font-bold text-primary mb-2">95%</h3>
+              <p className="text-muted-foreground">Success Rate</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-background py-12 px-4 border-t">
+        <div className="container mx-auto max-w-6xl">
+          <div className="flex flex-col md:flex-row justify-between">
+            <div className="mb-8 md:mb-0">
+              <div className="flex items-center mb-4">
+                <div className="bg-primary text-primary-foreground p-2 rounded-lg mr-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path>
+                    <circle cx="12" cy="12" r="4"></circle>
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-primary">FindKer</h3>
+              </div>
+              <p className="text-muted-foreground max-w-md">
+                FindKer helps people reconnect with their lost items through a community-driven platform.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+              <div>
+                <h4 className="font-bold mb-4">Company</h4>
+                <ul className="space-y-2">
+                  <li>
+                    <Link href="/about" className="text-muted-foreground hover:text-primary">
+                      About
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/contact" className="text-muted-foreground hover:text-primary">
+                      Contact
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/help" className="text-muted-foreground hover:text-primary">
+                      Help & Support
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-bold mb-4">Legal</h4>
+                <ul className="space-y-2">
+                  <li>
+                    <Link href="/terms" className="text-muted-foreground hover:text-primary">
+                      Terms
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/privacy" className="text-muted-foreground hover:text-primary">
+                      Privacy
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/cookies" className="text-muted-foreground hover:text-primary">
+                      Cookies
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-bold mb-4">Connect</h4>
+                <ul className="space-y-2">
+                  <li>
+                    <a href="mailto:info@findker.com" className="text-muted-foreground hover:text-primary">
+                      Email
+                    </a>
+                  </li>
+                  <li>
+                    <a href="tel:+1234567890" className="text-muted-foreground hover:text-primary">
+                      Phone
+                    </a>
+                  </li>
+                  <li>
+                    <address className="text-muted-foreground not-italic">123 Main St, City</address>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="border-t mt-12 pt-8 text-center text-muted-foreground">
+            <p>© {new Date().getFullYear()} FindKer. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

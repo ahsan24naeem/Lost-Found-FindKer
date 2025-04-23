@@ -10,10 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Slider } from "@/components/ui/slider"
-import { Switch } from "@/components/ui/switch"
 import ItemCard from "@/components/item-card"
 import Navbar from "@/components/navbar"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function FoundItemsPage() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -202,6 +201,20 @@ export default function FoundItemsPage() {
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
                   <div className="space-y-2">
+                    <h3 className="text-sm font-medium">Categories</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["Electronics", "Jewelry", "Clothing", "Accessories", "Documents", "Keys", "Bags", "Other"].map(
+                        (category) => (
+                          <div key={category} className="flex items-center space-x-2">
+                            <Checkbox id={`category-${category.toLowerCase()}`} />
+                            <Label htmlFor={`category-${category.toLowerCase()}`}>{category}</Label>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-2">
                     <h3 className="text-sm font-medium">Date Range</h3>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
@@ -222,30 +235,6 @@ export default function FoundItemsPage() {
                       <Button variant="outline" size="icon">
                         <MapPin className="h-4 w-4" />
                       </Button>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-medium">Distance</h4>
-                      <Slider defaultValue={[5]} max={50} step={1} />
-                      <div className="flex justify-between">
-                        <span className="text-xs">0 mi</span>
-                        <span className="text-xs">50 mi</span>
-                      </div>
-                    </div>
-                  </div>
-                  <Separator />
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium">Additional Filters</h3>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="has-images">Has Images</Label>
-                      <Switch id="has-images" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="verified">Verified Reports</Label>
-                      <Switch id="verified" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="claimed">Not Yet Claimed</Label>
-                      <Switch id="claimed" />
                     </div>
                   </div>
                   <div className="flex justify-end gap-2">
