@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function RegisterPage() {
   const { signup } = useAuth()
@@ -29,6 +30,8 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    phoneNumber: "",
+    gender: "",
   })
 
   const handleSignupChange = (e) => {
@@ -36,11 +39,11 @@ export default function RegisterPage() {
     setSignupData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSignupSubmit = (e) => {
+  const handleSignupSubmit = async (e) => {
     e.preventDefault()
 
     // Basic validation
-    if (!signupData.name || !signupData.email || !signupData.password || !signupData.confirmPassword) {
+    if (!signupData.name || !signupData.email || !signupData.password || !signupData.confirmPassword || !signupData.phoneNumber || !signupData.gender) {
       toast({
         title: "Error",
         description: "Please fill in all fields",
@@ -58,20 +61,50 @@ export default function RegisterPage() {
       return
     }
 
-    // In a real app, you would send this data to your backend
-    // For demo purposes, we'll just sign the user up
-    signup({
-      id: Date.now(),
-      name: signupData.name,
-      email: signupData.email,
-    })
+    try {
+      const response = await fetch('http://localhost:5000/api/user/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: signupData.name,
+          email: signupData.email,
+          password: signupData.password,
+          phoneNumber: signupData.phoneNumber,
+          gender: signupData.gender,
+        }),
+      })
 
-    toast({
-      title: "Success",
-      description: "Your account has been created successfully",
-    })
+      const data = await response.json()
 
-    router.push("/home")
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed')
+      }
+
+      // Call the signup function from auth context
+      await signup({
+        name: signupData.name,
+        email: signupData.email,
+        password: signupData.password,
+        phoneNumber: signupData.phoneNumber,
+        gender: signupData.gender,
+      })
+
+      toast({
+        title: "Success",
+        description: "Your account has been created successfully",
+      })
+
+      router.push("/home")
+    } catch (error) {
+      console.error('Registration error:', error)
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create account. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   // Don't render the form until we're on the client
@@ -141,6 +174,35 @@ export default function RegisterPage() {
                   onChange={handleSignupChange}
                   required
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-phone">Phone Number</Label>
+                <Input
+                  id="signup-phone"
+                  name="phoneNumber"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  value={signupData.phoneNumber}
+                  onChange={handleSignupChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-gender">Gender</Label>
+                <Select
+                  value={signupData.gender}
+                  onValueChange={(value) => handleSignupChange({ target: { name: 'gender', value } })}
+                  required
+                >
+                  <SelectTrigger id="signup-gender">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="M">Male</SelectItem>
+                    <SelectItem value="F">Female</SelectItem>
+                    <SelectItem value="O">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-password">Password</Label>

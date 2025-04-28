@@ -77,7 +77,7 @@ export default function FeedItemCard({ item }) {
     category: item.CategoryName,
     location: item.ItemLocation,
     date: item.PostDate,
-    images: item.ImageURL ? [`http://localhost:5000/uploads/${item.ImageURL}`] : [],
+    images: item.ImageURL ? [`http://localhost:5000/uploads/${item.ImageURL}.jpg`] : [],
     description: item.ItemDescription,
     user: {
       name: item.PostedBy || 'Anonymous',

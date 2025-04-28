@@ -36,14 +36,51 @@ export default function Home() {
   const [showFilterMenu, setShowFilterMenu] = useState(false)
 
   // Available categories
-  const categories = ["Electronics", "Jewelry", "Keys", "Bags", "Documents", "Clothing", "Pets", "Other"]
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/categories/all')
+        if (!response.ok) {
+          throw new Error('Failed to fetch categories')
+        }
+        const data = await response.json()
+        setCategories(data)
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+        toast({
+          title: "Error",
+          description: "Failed to load categories. Please try again later.",
+          variant: "destructive",
+        })
+      }
+    }
+
+    fetchCategories()
+  }, [toast])
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isAuthenticated() && !user) {
-      router.push("/")
-    }
-  }, [isAuthenticated, user, router])
+    const checkAuth = async () => {
+      if (!loading) {
+        const auth = isAuthenticated();
+        if (!auth) {
+          router.replace("/login");
+          return;
+        }
+      }
+    };
+
+    // Check auth immediately
+    checkAuth();
+
+    // Set up an interval to check auth every minute
+    const interval = setInterval(checkAuth, 60000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, [isAuthenticated, loading, router]);
 
   // Fetch posts based on active tab
   useEffect(() => {
@@ -79,22 +116,6 @@ export default function Home() {
     fetchPosts()
   }, [activeTab, selectedCategories, toast])
 
-  const handleSave = async (id) => {
-    try {
-      // Implement save functionality if needed
-      toast({
-        title: "Success",
-        description: "Item saved successfully",
-      })
-    } catch (error) {
-      console.error('Error saving item:', error)
-      toast({
-        title: "Error",
-        description: "Failed to save item",
-        variant: "destructive",
-      })
-    }
-  }
 
   const toggleCategory = (category) => {
     setSelectedCategories(prev => {
@@ -106,8 +127,16 @@ export default function Home() {
     })
   }
 
-  if (!isAuthenticated() && !user) {
-    return null // Don't render anything while redirecting
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Loading...</h1>
+          <p className="text-muted-foreground">Please wait while we check your authentication status.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -182,11 +211,11 @@ export default function Home() {
                   <DropdownMenuContent align="end" className="w-56">
                     {categories.map((category) => (
                       <DropdownMenuCheckboxItem
-                        key={category}
-                        checked={selectedCategories.includes(category)}
-                        onCheckedChange={() => toggleCategory(category)}
+                        key={category.CategoryName}
+                        checked={selectedCategories.includes(category.CategoryName)}
+                        onCheckedChange={() => toggleCategory(category.CategoryName)}
                       >
-                        {category}
+                        {category.CategoryName}
                       </DropdownMenuCheckboxItem>
                     ))}
                   </DropdownMenuContent>

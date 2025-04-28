@@ -87,7 +87,7 @@ export const deleteClaim = async (req, res) => {
 };
 
 
-// Admin processes a claim (Approve or Reject)
+// Admin processes a claim (Approve or Reject) new
 export const adminProcessClaim = async (req, res) => {
     const { claimID, adminID, decision } = req.body; 
 

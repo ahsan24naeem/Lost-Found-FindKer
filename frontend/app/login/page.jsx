@@ -132,7 +132,7 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="login-password">Password</Label>
-                  <Button
+                  {/* <Button
                     variant="link"
                     className="p-0 h-auto text-xs"
                     onClick={() =>
@@ -143,7 +143,7 @@ export default function LoginPage() {
                     }
                   >
                     Forgot password?
-                  </Button>
+                  </Button> */}
                 </div>
                 <div className="relative">
                   <Input
