@@ -15,7 +15,7 @@ export const verifyToken = (req, res, next) => {
     
     // 2. Check cookies (for SSR/SSG pages)
     if (!token && req.cookies) {
-      token = req.cookies.token
+      token = req.cookies.auth
     }
 
     if (!token) {
@@ -28,7 +28,7 @@ export const verifyToken = (req, res, next) => {
     
     // Refresh cookie expiration on successful auth
     res.setHeader('Set-Cookie', 
-      cookie.serialize('token', token, {
+      cookie.serialize('auth', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -43,7 +43,7 @@ export const verifyToken = (req, res, next) => {
     if (error.name === 'TokenExpiredError') {
       // Clear expired token cookie
       res.setHeader('Set-Cookie', 
-        cookie.serialize('token', '', {
+        cookie.serialize('auth', '', {
           httpOnly: true,
           expires: new Date(0),
           path: '/'
@@ -58,7 +58,7 @@ export const verifyToken = (req, res, next) => {
 // Optional auth with proper cookie handling
 export const optionalAuth = (req, res, next) => {
   try {
-    let token = req.cookies?.token || req.headers.authorization?.split(' ')[1]
+    let token = req.cookies?.auth || req.headers.authorization?.split(' ')[1]
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET)
       req.user = decoded
@@ -73,7 +73,7 @@ export const optionalAuth = (req, res, next) => {
 // Login response helper
 export const sendAuthResponse = (res, token, userData) => {
   res.setHeader('Set-Cookie',
-    cookie.serialize('token', token, {
+    cookie.serialize('auth', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',

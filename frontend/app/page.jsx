@@ -50,12 +50,12 @@ export default function AboutPage() {
             lost items with those who have found them.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link href="/login">Sign In</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/register">Create Account</Link>
-            </Button>
+          <Button size="lg" asChild className="px-8">
+            <Link href="/login">Sign In</Link>
+          </Button>
+          <Button size="lg" variant="outline" asChild className="px-8">
+            <Link href="/register">Create Account</Link>
+          </Button>
           </div>
         </div>
       </div>
