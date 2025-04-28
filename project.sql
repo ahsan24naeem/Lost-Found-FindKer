@@ -7,10 +7,8 @@ CREATE TABLE Users (
     FullName NVARCHAR(255) NOT NULL,
 	Gender char(1), 
     Email NVARCHAR(255) UNIQUE NOT NULL,
-    PasswordHash NVARCHAR(255), --NOT NULL
+    PasswordHash NVARCHAR(255), 
     PhoneNumber NVARCHAR(11),
-    OAuthProvider NVARCHAR(50),  -- Google, Facebook, etc.
-    OAuthID NVARCHAR(255),       -- Unique ID from OAuth provider
     UserRole NVARCHAR(50) CHECK (UserRole IN ('User', 'Admin')) DEFAULT 'User',
     CreatedAt DATETIME DEFAULT GETDATE(),
 	CONSTRAINT chk_Phone_Length CHECK (LEN(PhoneNumber) = 11),
@@ -104,15 +102,16 @@ CREATE TABLE Messages (
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
+select * from Users
 
 -- Insert into Users
-INSERT INTO Users (FullName, Gender, Email, PasswordHash, PhoneNumber, OAuthProvider, OAuthID, UserRole) VALUES
-('Ahsan Naeem', 'F', 'l230517@lhr.nu.edu.pk', 'Ahsan', '03248403266', NULL, NULL, 'Admin'),
-('Ali Khan', 'M', 'ali.khan@lhr.nu.edu.pk', 'hashed_password1', '03123456789', NULL, NULL, 'User'),
-('Sara Ahmed', 'F', 'sara.ahmed@lhr.nu.edu.pk', 'hashed_password2', '03211234567', NULL, NULL, 'Admin'),
-('Omar Farooq', 'M', 'omar.farooq@lhr.nu.edu.pk', 'hashed_password3', '03001112233', 'Google', 'google123', 'User'),
-('Ayesha Malik', 'F', 'ayesha.malik@lhr.nu.edu.pk', 'hashed_password4', '03119887766', NULL, NULL, 'User'),
-('Hassan Raza', 'M', 'hassan.raza@lhr.nu.edu.pk', 'hashed_password5', '03005556677', 'Facebook', 'fb_456', 'User');
+INSERT INTO Users (FullName, Gender, Email, PasswordHash, PhoneNumber, UserRole) VALUES
+('Ahsan Naeem', 'F', 'l230517@lhr.nu.edu.pk', NULL, '03248403266', 'Admin'),
+('Ali Khan', 'M', 'ali.khan@lhr.nu.edu.pk', NULL, '03123456789', 'User'),
+('Sara Ahmed', 'F', 'sara.ahmed@lhr.nu.edu.pk', NULL, '03211234567', 'Admin'),
+('Omar Farooq', 'M', 'omar.farooq@lhr.nu.edu.pk', NULL, '03001112233', 'User'),
+('Ayesha Malik', 'F', 'ayesha.malik@lhr.nu.edu.pk', NULL, '03119887766', 'User'),
+('Hassan Raza', 'M', 'hassan.raza@lhr.nu.edu.pk', NULL, '03005556677', 'User');
 
 -- Insert into Categories
 INSERT INTO Categories (CategoryName) VALUES
@@ -128,7 +127,7 @@ select * from users
 INSERT INTO Items (UserID, Title, ItemDescription, CategoryID, ItemStatus, ItemLocation, ImageURL, QRCode, PrivateDetails) VALUES
 (1, 'Lost iPhone', 'Black iPhone 12 lost near cafeteria', 1, 'Lost', 'University Cafeteria', NULL, NULL, 'Serial No: 12345'),
 (2, 'Found Wallet', 'Brown leather wallet with ID card inside', 2, 'Found', 'Library', NULL, NULL, 'Contains Student ID'),
-(3, 'Lost Jacket', 'Blue denim jacket with brand label', 3, 'Lost', 'Parking Lot', NULL, NULL, 'Brand: Levi�s'),
+(3, 'Lost Jacket', 'Blue denim jacket with brand label', 3, 'Lost', 'Parking Lot', NULL, NULL, 'Brand: Levis'),
 (4, 'Found Notebook', 'Green spiral notebook with handwritten notes', 4, 'Found', 'Lecture Hall B', NULL, NULL, 'Name on first page'),
 (5, 'Lost Watch', 'Silver analog watch with black strap', 5, 'Lost', 'Sports Complex', NULL, NULL, 'Engraved initials: HR');
 
@@ -249,15 +248,14 @@ CREATE PROCEDURE InsertUser
     @Gender CHAR(1),
     @Email NVARCHAR(255),
     @PasswordHash NVARCHAR(255),
-    @PhoneNumber NVARCHAR(11),
-    @OAuthProvider NVARCHAR(50) = NULL,
-    @OAuthID NVARCHAR(255) = NULL
+    @PhoneNumber NVARCHAR(11)
+ 
 AS
 BEGIN
     SET NOCOUNT ON;
 
-INSERT INTO Users (FullName, Gender, Email, PasswordHash, PhoneNumber, OAuthProvider, OAuthID)
-VALUES (@FullName, @Gender, @Email, @PasswordHash, @PhoneNumber, @OAuthProvider, @OAuthID);
+INSERT INTO Users (FullName, Gender, Email, PasswordHash, PhoneNumber)
+VALUES (@FullName, @Gender, @Email, @PasswordHash, @PhoneNumber);
 
 SELECT SCOPE_IDENTITY() AS UserID; --Return the newly created user ID
 END;
@@ -518,4 +516,3 @@ BEGIN
     -- Call the procedure to add notifications for other users
     EXEC AddPostNotification @ItemID, @UserID;
 END;
-
