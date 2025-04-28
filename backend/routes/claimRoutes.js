@@ -25,6 +25,6 @@ router.get("/claim/votes/:claimID", getClaimVotes);
 // Delete a claim
 router.delete("/claim", deleteClaim);
 
-router.post('/admin/process-claim', adminProcessClaim); 
+router.post('/admin/process-claim', adminProcessClaim);
 
 export default router;

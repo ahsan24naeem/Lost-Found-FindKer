@@ -89,7 +89,7 @@ export const deleteClaim = async (req, res) => {
 
 // Admin processes a claim (Approve or Reject)
 export const adminProcessClaim = async (req, res) => {
-    const { claimID, adminID, decision } = req.body; // decision must be 'Approve' or 'Reject'
+    const { claimID, adminID, decision } = req.body; 
 
     try {
         let pool = await sql.connect(dbConfig);
