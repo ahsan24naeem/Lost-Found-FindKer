@@ -1,31 +1,46 @@
 import { NextResponse } from "next/server"
 
+// Define public paths that don't require authentication
+const publicPaths = new Set([
+  "/",
+  "/about",
+  "/privacy",
+  "/terms",
+  "/faq",
+  "/contact",
+  "/login",
+  "/register"
+])
+
 export function middleware(request) {
-  // Get the pathname of the request
   const path = request.nextUrl.pathname
 
-  // Define public paths that don't require authentication
-  const isPublicPath =
-    path === "/" ||
-    path === "/about" ||
-    path === "/privacy" ||
-    path === "/terms" ||
-    path === "/faq" ||
-    path === "/contact" ||
-    path === "/login" ||
-    path === "/register"
+  // Allow public paths
+  if (publicPaths.has(path)) {
+    return NextResponse.next()
+  }
 
-  // Check if the user is authenticated by looking for the user cookie
-  const isAuthenticated = request.cookies.has("user")
-
-  // If the path is not public and the user is not authenticated, redirect to the login page
-  if (!isPublicPath && !isAuthenticated) {
+  // Check for auth cookie
+  const authCookie = request.cookies.get("auth")
+  if (!authCookie?.value) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // If the path is the login/register page and the user is authenticated, redirect to the home page
-  if ((path === "/login" || path === "/register") && isAuthenticated) {
-    return NextResponse.redirect(new URL("/home", request.url))
+  // Verify token with backend
+  try {
+    const response = fetch("http://localhost:5000/api/user/verify", {
+      headers: {
+        Cookie: `auth=${authCookie.value}`,
+      },
+      credentials: "include",
+    })
+
+    if (!response.ok) {
+      return NextResponse.redirect(new URL("/login", request.url))
+    }
+  } catch (error) {
+    console.error("Auth verification failed:", error)
+    return NextResponse.redirect(new URL("/login", request.url))
   }
 
   return NextResponse.next()

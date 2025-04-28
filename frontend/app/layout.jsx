@@ -9,13 +9,13 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata = {
   title: "FindKer - Lost and Found",
   description: "Find your lost items or help others find theirs",
-    generator: 'v0.dev'
+    generator: 'Ahsan Naeem'
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             {children}

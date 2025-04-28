@@ -1,83 +1,99 @@
-create database projectDB;
-use projectDB;
+﻿-- =========================
+-- 📦 DATABASE CREATION
+-- =========================
+drop login lostfound
+CREATE LOGIN lostfound WITH PASSWORD = 'lostfound12345';
+CREATE USER lostfound FOR LOGIN lostfound;
+ALTER ROLE db_owner ADD MEMBER lostfound;
 
+CREATE DATABASE projectDB;
+GO
+USE projectDB;
+GO
 
+-- =========================
+-- 📄 TABLES
+-- =========================
+
+-- USERS
 CREATE TABLE Users (
     UserID INT IDENTITY(1,1) PRIMARY KEY,
     FullName NVARCHAR(255) NOT NULL,
-	Gender char(1), 
-    Email NVARCHAR(255) UNIQUE NOT NULL,
-    PasswordHash NVARCHAR(255), --NOT NULL
-    PhoneNumber NVARCHAR(11),
-    OAuthProvider NVARCHAR(50),  -- Google, Facebook, etc.
-    OAuthID NVARCHAR(255),       -- Unique ID from OAuth provider
+    Gender CHAR(1) CHECK (Gender IN ('M', 'F', 'O')),
+    Email NVARCHAR(255) UNIQUE NOT NULL CHECK (Email LIKE '%@lhr.nu.edu.pk'),
+    PasswordHash NVARCHAR(255),
+    PhoneNumber NVARCHAR(11) CHECK (LEN(PhoneNumber) = 11),
     UserRole NVARCHAR(50) CHECK (UserRole IN ('User', 'Admin')) DEFAULT 'User',
-    CreatedAt DATETIME DEFAULT GETDATE(),
-	CONSTRAINT chk_Phone_Length CHECK (LEN(PhoneNumber) = 11),
-	CONSTRAINT chk_EmailDomain CHECK (Email LIKE '%@lhr.nu.edu.pk'),
-	CONSTRAINT chk_Gender CHECK (Gender IN ('M', 'F', 'O'))
+    ProfilePic NVARCHAR(MAX) NOT NULL DEFAULT 'https://www.google.com/imgres?q=wolf&imgurl=https%3A%2F%2Fanimalfactguide.com%2Fwp-content%2Fuploads%2F2024%2F01%2Fgray-wolf-2.jpg&imgrefurl=https%3A%2F%2Fanimalfactguide.com%2Fanimal-facts%2Fgray-wolf%2F&docid=17M4gx2EFuvlXM&tbnid=RCaegHjO0ylwQM&vet=12ahUKEwin6dv-gPiMAxWMRqQEHd2rDAIQM3oECF4QAA..i&w=1000&h=710&hcb=2&ved=2ahUKEwin6dv-gPiMAxWMRqQEHd2rDAIQM3oECF4QAA',
+
+    CreatedAt DATETIME DEFAULT GETDATE()
 );
 
+-- CATEGORIES
 CREATE TABLE Categories (
     CategoryID INT IDENTITY(1,1) PRIMARY KEY,
     CategoryName NVARCHAR(100) UNIQUE NOT NULL
 );
 
-CREATE TABLE Items(
+-- ITEMS (POSTS)
+CREATE TABLE Items (
     ItemID INT IDENTITY(1,1) PRIMARY KEY,
-    UserID INT FOREIGN KEY REFERENCES Users(UserID) ON DELETE CASCADE,
+    UserID INT FOREIGN KEY REFERENCES Users(UserID),
     Title NVARCHAR(255) NOT NULL,
     ItemDescription NVARCHAR(MAX),
     CategoryID INT FOREIGN KEY REFERENCES Categories(CategoryID),
-    ItemStatus NVARCHAR(50) CHECK (ItemStatus IN ('Lost', 'Found', 'Claimed', 'Banned')) NOT NULL,
+    ItemStatus NVARCHAR(50) CHECK (ItemStatus IN ('Lost', 'Found', 'Claimed')) NOT NULL,
     ItemLocation NVARCHAR(255) NOT NULL,
     DateReported DATETIME DEFAULT GETDATE(),
     ImageURL NVARCHAR(255),
-    QRCode NVARCHAR(255),
-    PrivateDetails NVARCHAR(255),  -- For verification purposes
+	   QRCode NVARCHAR(255) UNIQUE,
+    PrivateDetails NVARCHAR(255),
     IsFlagged INT DEFAULT 0,
     ClaimedBy INT NULL FOREIGN KEY REFERENCES Users(UserID)
 );
 
+-- CLAIMS
 CREATE TABLE Claims (
     ClaimID INT IDENTITY(1,1) PRIMARY KEY,
-    ItemID INT not NULL,
-    UserID INT not NULL,  
-    ClaimDetails NVARCHAR(255) NOT NULL, 
+    ItemID INT NOT NULL FOREIGN KEY REFERENCES Items(ItemID) ON DELETE CASCADE,
+    UserID INT NOT NULL FOREIGN KEY REFERENCES Users(UserID),
+    ClaimDetails NVARCHAR(255) NOT NULL,
     ClaimsStatus NVARCHAR(50) CHECK (ClaimsStatus IN ('Pending', 'Approved', 'Rejected')) DEFAULT 'Pending',
     CreatedAt DATETIME DEFAULT GETDATE(),
-    AdminReviewedBy INT NULL,
-	--CONSTRAINT FK_ADMINREVIEWBY FOREIGN KEY (AdminReviewedBy) REFERENCES Users(UserID) on delete set null,  
-    CONSTRAINT FK_Claims_Items FOREIGN KEY (ItemID) REFERENCES Items(ItemID) on delete cascade,
+    AdminReviewedBy INT NULL FOREIGN KEY REFERENCES Users(UserID)
 );
 
+-- NOTIFICATIONS
 CREATE TABLE Notifications (
     NotificationID INT IDENTITY(1,1) PRIMARY KEY,
-    UserID INT FOREIGN KEY REFERENCES Users(UserID) ON DELETE CASCADE,
-	ItemID INT, --???
+    UserID INT FOREIGN KEY REFERENCES Users(UserID),
+    ItemID INT NULL FOREIGN KEY REFERENCES Items(ItemID) ON DELETE SET NULL,
     Message NVARCHAR(255) NOT NULL,
     IsRead BIT DEFAULT 0,
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
-CREATE TABLE Flags ( --REPORT A POST
+-- FLAGS (REPORTS)
+CREATE TABLE Flags (
     FlagID INT IDENTITY(1,1) PRIMARY KEY,
     ItemID INT FOREIGN KEY REFERENCES Items(ItemID) ON DELETE CASCADE,
-    ReportedBy INT FOREIGN KEY REFERENCES Users(UserID),
+    ReportedBy INT NOT NULL FOREIGN KEY REFERENCES Users(UserID),
     Reason NVARCHAR(255) NOT NULL,
     Status NVARCHAR(50) CHECK (Status IN ('Pending', 'Reviewed', 'Dismissed')) DEFAULT 'Pending',
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
+-- COMMUNITY VERIFICATION (VOTING ON CLAIMS)
 CREATE TABLE CommunityVerification (
     VerificationID INT IDENTITY(1,1) PRIMARY KEY,
     ClaimID INT FOREIGN KEY REFERENCES Claims(ClaimID) ON DELETE CASCADE,
     UserID INT FOREIGN KEY REFERENCES Users(UserID),
     VoteType NVARCHAR(10) CHECK (VoteType IN ('Upvote', 'Downvote')),
     CreatedAt DATETIME DEFAULT GETDATE(),
-	CONSTRAINT claim_user_unique UNIQUE(ClaimID,UserID)
+    CONSTRAINT claim_user_unique UNIQUE(ClaimID, UserID)
 );
 
+-- LOCATIONS (MAP COORDINATES)
 CREATE TABLE Locations (
     LocationID INT IDENTITY(1,1) PRIMARY KEY,
     ItemID INT FOREIGN KEY REFERENCES Items(ItemID) ON DELETE CASCADE,
@@ -85,145 +101,226 @@ CREATE TABLE Locations (
     Longitude DECIMAL(9,6)
 );
 
+-- COMMENTS
 CREATE TABLE Comments (
     CommentID INT IDENTITY(1,1) PRIMARY KEY,
-    PostID INT FOREIGN KEY REFERENCES Items(ItemID) ON DELETE CASCADE,
+    PostID INT FOREIGN KEY REFERENCES Items(ItemID),
     UserID INT FOREIGN KEY REFERENCES Users(UserID),
     CommentText NVARCHAR(MAX) NOT NULL,
     CreatedAt DATETIME DEFAULT GETDATE(),
-    IsFlagged BIT DEFAULT 0  -- If inappropriate
+    IsFlagged BIT DEFAULT 0
 );
 
+-- MESSAGES
 CREATE TABLE Messages (
     MessageID INT IDENTITY(1,1) PRIMARY KEY,
     SenderID INT FOREIGN KEY REFERENCES Users(UserID),
     ReceiverID INT FOREIGN KEY REFERENCES Users(UserID),
-    PostID INT FOREIGN KEY REFERENCES Items(ItemID) ON DELETE CASCADE,
+    PostID INT FOREIGN KEY REFERENCES Items(ItemID),
     MessageText NVARCHAR(MAX) NOT NULL,
     IsRead BIT DEFAULT 0,
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
 
--- Insert into Users
-INSERT INTO Users (FullName, Gender, Email, PasswordHash, PhoneNumber, OAuthProvider, OAuthID, UserRole) VALUES
-('Ahsan Naeem', 'F', 'l230517@lhr.nu.edu.pk', 'Ahsan', '03248403266', NULL, NULL, 'Admin'),
-('Ali Khan', 'M', 'ali.khan@lhr.nu.edu.pk', 'hashed_password1', '03123456789', NULL, NULL, 'User'),
-('Sara Ahmed', 'F', 'sara.ahmed@lhr.nu.edu.pk', 'hashed_password2', '03211234567', NULL, NULL, 'Admin'),
-('Omar Farooq', 'M', 'omar.farooq@lhr.nu.edu.pk', 'hashed_password3', '03001112233', 'Google', 'google123', 'User'),
-('Ayesha Malik', 'F', 'ayesha.malik@lhr.nu.edu.pk', 'hashed_password4', '03119887766', NULL, NULL, 'User'),
-('Hassan Raza', 'M', 'hassan.raza@lhr.nu.edu.pk', 'hashed_password5', '03005556677', 'Facebook', 'fb_456', 'User');
-
--- Insert into Categories
-INSERT INTO Categories (CategoryName) VALUES
-('Electronics'),
-('Bags'),
-('Clothing'),
-('Books'),
-('Accessories');
-
-select * from users
-
--- Insert into Items
-INSERT INTO Items (UserID, Title, ItemDescription, CategoryID, ItemStatus, ItemLocation, ImageURL, QRCode, PrivateDetails) VALUES
-(1, 'Lost iPhone', 'Black iPhone 12 lost near cafeteria', 1, 'Lost', 'University Cafeteria', NULL, NULL, 'Serial No: 12345'),
-(2, 'Found Wallet', 'Brown leather wallet with ID card inside', 2, 'Found', 'Library', NULL, NULL, 'Contains Student ID'),
-(3, 'Lost Jacket', 'Blue denim jacket with brand label', 3, 'Lost', 'Parking Lot', NULL, NULL, 'Brand: Levi�s'),
-(4, 'Found Notebook', 'Green spiral notebook with handwritten notes', 4, 'Found', 'Lecture Hall B', NULL, NULL, 'Name on first page'),
-(5, 'Lost Watch', 'Silver analog watch with black strap', 5, 'Lost', 'Sports Complex', NULL, NULL, 'Engraved initials: HR');
-
--- Insert into Claims
-INSERT INTO Claims (ItemID, UserID, ClaimDetails) VALUES
-(1, 3, 'It belongs to me, I can unlock it'),
-(2, 1, 'My wallet, it has my ID'),
-(3, 4, 'I lost this jacket yesterday'),
-(4, 2, 'That�s my notebook, it has my notes'),
-(5, 5, 'My watch, has initials HR engraved');
-
--- Insert into Notifications
-INSERT INTO Notifications (UserID, ItemID, Message) VALUES
-(1, 1, 'Your item report has been received'),
-(2, 2, 'A new found item matches your description'),
-(3, 3, 'Your claim is under review'),
-(4, 4, 'Your found item post has received a claim'),
-(5, 5, 'Your reported lost item has a match');
-
--- Insert into Flags
-INSERT INTO Flags (ItemID, ReportedBy, Reason) VALUES
-(1, 2, 'Suspicious listing'),
-(2, 3, 'Incorrect information'),
-(3, 4, 'Duplicate post'),
-(4, 5, 'Inappropriate content'),
-(5, 1, 'Misleading details');
-
--- Insert into CommunityVerification
-INSERT INTO CommunityVerification (ClaimID, UserID, VoteType) VALUES
-(1, 2, 'Upvote'),
-(2, 3, 'Upvote'),
-(3, 4, 'Downvote'),
-(4, 5, 'Upvote'),
-(5, 1, 'Downvote');
-
--- Insert into Locations
-INSERT INTO Locations (ItemID, Latitude, Longitude) VALUES
-(1, 31.5204, 74.3587),
-(2, 31.5220, 74.3615),
-(3, 31.5150, 74.3555),
-(4, 31.5178, 74.3592),
-(5, 31.5199, 74.3570);
-
--- Insert into Comments
-INSERT INTO Comments (PostID, UserID, CommentText) VALUES
-(1, 2, 'Hope you find it soon!'),
-(2, 3, 'Thanks for posting!'),
-(3, 4, 'Can you describe it more?'),
-(4, 5, 'I lost a similar one!'),
-(5, 1, 'Any updates?');
-
--- Insert into Messages
-INSERT INTO Messages (SenderID, ReceiverID, PostID, MessageText) VALUES
-(1, 3, 1, 'Hey, I think this is my phone!'),
-(2, 1, 2, 'I found a wallet, is this yours?'),
-(3, 4, 3, 'Can you tell me more about the jacket?'),
-(4, 5, 4, 'I found a notebook, what�s written inside?'),
-(5, 1, 5, 'I lost a watch, does it have my initials?');
-
--- View: User Profile
-CREATE view otherUsersProfile AS
-SELECT UserID, FullName, Gender, Email, PhoneNumber, CreatedAt
-FROM Users U;
-
-SELECT * FROM otherUsersProfile;
-
---procedure: profile details
-CREATE PROCEDURE GetUserProfileDetails
-@UserID INT
+GO 
+CREATE OR ALTER PROCEDURE AdminProcessClaim
+    @ClaimID INT,
+    @AdminID INT,
+    @Decision NVARCHAR(10) -- 'Approve' or 'Reject'
 AS
 BEGIN
-    With profiledetails as (SELECT UserID, FullName, Gender, Email, PhoneNumber, CreatedAt
-    FROM Users
-    WHERE UserID = @UserID)
-Select * from profiledetails;
+    -- Verify the user is an admin
+    IF NOT EXISTS (SELECT 1 FROM Users WHERE UserID = @AdminID AND UserRole = 'Admin')
+    BEGIN
+        RAISERROR('Only administrators can process claims.', 16, 1);
+        RETURN;
+    END
+
+    -- Get the claim and item information
+    DECLARE @ItemID INT;
+    DECLARE @ClaimantID INT;
+    DECLARE @CurrentClaimStatus NVARCHAR(50);
+    DECLARE @ItemOwnerID INT;
+    
+    SELECT 
+        @ItemID = c.ItemID,
+        @ClaimantID = c.UserID,
+        @CurrentClaimStatus = c.ClaimsStatus,
+        @ItemOwnerID = i.UserID
+    FROM Claims c
+    JOIN Items i ON c.ItemID = i.ItemID
+    WHERE c.ClaimID = @ClaimID;
+    
+    -- Check if claim exists
+    IF @ItemID IS NULL
+    BEGIN
+        RAISERROR('Claim not found.', 16, 1);
+        RETURN;
+    END
+    
+    -- Check if claim is already processed
+    IF @CurrentClaimStatus != 'Pending'
+    BEGIN
+        RAISERROR('This claim has already been processed.', 16, 1);
+        RETURN;
+    END
+    
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        IF @Decision = 'Approve'
+        BEGIN
+            -- Update claim status
+            UPDATE Claims 
+            SET ClaimsStatus = 'Approved', 
+                AdminReviewedBy = @AdminID
+            WHERE ClaimID = @ClaimID;
+            
+            -- Update item status to Claimed and set ClaimedBy
+            UPDATE Items
+            SET ItemStatus = 'Claimed',
+                ClaimedBy = @ClaimantID
+            WHERE ItemID = @ItemID;
+            
+            -- Notify the claimant
+            INSERT INTO Notifications (UserID, ItemID, Message)
+            VALUES (@ClaimantID, @ItemID, 'Your claim has been approved! Please contact the item owner to arrange collection.');
+            
+            -- Notify the item owner
+            INSERT INTO Notifications (UserID, ItemID, Message)
+            VALUES (@ItemOwnerID, @ItemID, 'A claim for your item has been approved. The claimant will contact you soon.');
+            
+            -- Reject all other pending claims for this item
+            UPDATE Claims
+            SET ClaimsStatus = 'Rejected',
+                AdminReviewedBy = @AdminID
+            WHERE ItemID = @ItemID 
+              AND ClaimID != @ClaimID
+              AND ClaimsStatus = 'Pending';
+              
+            -- Notify other claimants
+            INSERT INTO Notifications (UserID, ItemID, Message)
+            SELECT UserID, ItemID, 'Your claim has been rejected as another claim was approved.'
+            FROM Claims
+            WHERE ItemID = @ItemID 
+              AND ClaimID != @ClaimID
+              AND ClaimsStatus = 'Rejected'
+              AND AdminReviewedBy = @AdminID;
+        END
+        ELSE IF @Decision = 'Reject'
+        BEGIN
+            -- Update claim status
+            UPDATE Claims 
+            SET ClaimsStatus = 'Rejected', 
+                AdminReviewedBy = @AdminID
+            WHERE ClaimID = @ClaimID;
+            
+            -- Notify the claimant
+            INSERT INTO Notifications (UserID, ItemID, Message)
+            VALUES (@ClaimantID, @ItemID, 'Your claim has been rejected. Please contact support for more information.');
+        END
+        ELSE
+        BEGIN
+            RAISERROR('Invalid decision. Use "Approve" or "Reject".', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+        
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
 END;
 
---Procedure: User's Items (Posts)
-CREATE PROCEDURE GetUserItemDetails
+-- =========================
+-- 👁️ VIEWS
+-- =========================
+
+GO
+-- View: Other Users Profile
+CREATE VIEW otherUsersProfile AS
+SELECT UserID, FullName, Gender, Email, PhoneNumber, CreatedAt
+FROM Users;
+
+GO
+-- View: All Posts
+CREATE VIEW AllPosts AS
+SELECT i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
+       i.ItemLocation, i.DateReported, i.ImageURL, u.FullName AS PostedBy
+FROM Items i
+JOIN Users u ON i.UserID = u.UserID
+LEFT JOIN Categories c ON i.CategoryID = c.CategoryID;
+
+
+
+
+GO
+-- View: Recent Posts (1 day old)
+CREATE VIEW RecentPosts AS
+SELECT * FROM AllPosts WHERE DateReported >= DATEADD(DAY, -1, GETDATE());
+
+GO
+-- View: Claims on Posts
+CREATE VIEW ClaimsOnPosts AS
+SELECT c.ClaimID, c.ItemID, u.FullName AS ClaimedBy, c.ClaimDetails, 
+       c.ClaimsStatus, c.CreatedAt, a.FullName AS ReviewedBy
+FROM Claims c
+JOIN Users u ON c.UserID = u.UserID
+LEFT JOIN Users a ON c.AdminReviewedBy = a.UserID;
+
+-- =========================
+-- ⚙️ STORED PROCEDURES
+-- =========================
+
+
+GO 
+CREATE OR ALTER PROCEDURE GetQR
+    @ItemID INT
+	AS
+BEGIN
+SELECT    QRCode FROM Items
+WHERE @ItemID = ItemID;
+END;
+
+
+-- 🔹 User Management
+GO
+CREATE OR ALTER PROCEDURE GetUserProfileDetails
     @UserID INT
 AS
 BEGIN
+    SELECT UserID, FullName, Gender, Email, PhoneNumber, ProfilePic, CreatedAt
+    FROM Users
+    WHERE UserID = @UserID;
+END;
+
+GO
+CREATE OR ALTER PROCEDURE GetUserItemDetails
+    @UserID INT
+AS
+BEGIN
+    -- User's Items (Posts)
     SELECT i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
            i.ItemLocation, i.DateReported, i.ImageURL
     FROM Items i
     LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
     WHERE i.UserID = @UserID;
-
 END;
 
- --Procedure: User's Claims
-CREATE PROCEDURE GetUserClaimDetails
+GO
+CREATE OR ALTER PROCEDURE GetUserClaimDetails
     @UserID INT
 AS
 BEGIN
+    -- User's Claims
     SELECT c.ClaimID, c.ItemID, i.Title AS ClaimedItem, c.ClaimDetails, 
            c.ClaimsStatus, c.CreatedAt
     FROM Claims c
@@ -231,20 +328,8 @@ BEGIN
     WHERE c.UserID = @UserID;
 END;
 
-
---Procedure: user login
-CREATE PROCEDURE GetUserCredentials
-    @Email NVARCHAR(255)
-AS
-BEGIN
-   
-    SELECT UserID, FullName, Email, PasswordHash, UserRole
-    FROM Users
-    WHERE Email = @Email;
-END;
-
---Procedure: insert user
-CREATE PROCEDURE InsertUser
+GO
+CREATE OR ALTER PROCEDURE InsertUser
     @FullName NVARCHAR(255),
     @Gender CHAR(1),
     @Email NVARCHAR(255),
@@ -254,77 +339,59 @@ CREATE PROCEDURE InsertUser
     @OAuthID NVARCHAR(255) = NULL
 AS
 BEGIN
-    SET NOCOUNT ON;
-
-INSERT INTO Users (FullName, Gender, Email, PasswordHash, PhoneNumber, OAuthProvider, OAuthID)
-VALUES (@FullName, @Gender, @Email, @PasswordHash, @PhoneNumber, @OAuthProvider, @OAuthID);
-
-SELECT SCOPE_IDENTITY() AS UserID; --Return the newly created user ID
+    INSERT INTO Users (FullName, Gender, Email, PasswordHash, PhoneNumber, UserRole)
+    VALUES (@FullName, @Gender, @Email, @PasswordHash, @PhoneNumber,   'User');
 END;
 
-select * from Users;
-
--- Procedure: Update User Information
-CREATE PROCEDURE UpdateUser
+GO
+CREATE OR ALTER PROCEDURE UpdateUserProfile
     @UserID INT,
-    @FullName NVARCHAR(255),
-    @PasswordHash NVARCHAR(255),
-    @PhoneNumber NVARCHAR(11)
+    @FullName NVARCHAR(255) = NULL,
+    @PasswordHash NVARCHAR(255) = NULL,
+    @PhoneNumber NVARCHAR(11) = NULL,
+    @Email NVARCHAR(255) = NULL,
+    @ProfilePic VARCHAR(255) = NULL
 AS
 BEGIN
-    UPDATE Users 
-    SET FullName = @FullName, PasswordHash = @PasswordHash, PhoneNumber = @PhoneNumber 
+    UPDATE Users
+    SET 
+        FullName = ISNULL(@FullName, FullName),
+        PasswordHash = ISNULL(@PasswordHash, PasswordHash),
+        PhoneNumber = ISNULL(@PhoneNumber, PhoneNumber),
+        Email = ISNULL(@Email, Email),
+        ProfilePic = ISNULL(@ProfilePic, ProfilePic)
     WHERE UserID = @UserID;
 END;
 
--- Procedure: Delete a User
-CREATE PROCEDURE DeleteUser
+GO
+CREATE OR ALTER PROCEDURE DeleteUserProfile
     @UserID INT
 AS
 BEGIN
-    DELETE FROM Users WHERE UserID = @UserID;
+    IF EXISTS (SELECT 1 FROM Users WHERE UserID = @UserID)
+    BEGIN
+        DELETE FROM Users WHERE UserID = @UserID;
+    END
+    ELSE
+    BEGIN
+        THROW 50002, 'User not found.', 1;
+    END
 END;
 
-
--- View: Display All Posts
-CREATE VIEW AllPosts 
-AS
-SELECT i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
-       i.ItemLocation, i.DateReported, i.ImageURL, u.FullName AS PostedBy
-FROM Items i
-JOIN Users u ON i.UserID = u.UserID
-LEFT JOIN Categories c ON i.CategoryID = c.CategoryID;
-
--- View: Display Recent Posts (Max 1 Day Old)
-CREATE VIEW RecentPosts AS
-SELECT * FROM AllPosts WHERE DateReported >= DATEADD(DAY, -1, GETDATE());
-
--- Stored Procedure: Display Categorized Posts
-CREATE PROCEDURE GetCategorizedPosts
-    @CategoryName NVARCHAR(100)
+GO
+-- 🔹 Authentication
+CREATE OR ALTER PROCEDURE GetUserCredentials
+    @Email NVARCHAR(255)
 AS
 BEGIN
-    SELECT * FROM AllPosts WHERE CategoryName = @CategoryName ORDER BY DateReported DESC;
+    SELECT UserID, FullName, Email, PasswordHash, UserRole
+    FROM Users
+    WHERE Email = @Email;
 END;
 
--- Stored Procedure: Retrieve Comments for a Post
-CREATE PROCEDURE GetPostComments
-    @PostID INT
-AS
-BEGIN
-    SELECT c.CommentID, u.FullName AS CommentedBy, c.CommentText, c.CreatedAt
-    FROM Comments c
-    JOIN Users u ON c.UserID = u.UserID
-    WHERE c.PostID = @PostID
-    ORDER BY c.CreatedAt DESC;
-END;
-
-go;
--- Stored Procedure: Create a New Post
-
-select * from Items;
-
-CREATE PROCEDURE CreatePost
+-- 🔹 Items & Posts
+GO
+CREATE OR ALTER PROCEDURE CreatePost
     @UserID INT,
     @Title NVARCHAR(255),
     @ItemDescription NVARCHAR(MAX),
@@ -335,65 +402,167 @@ CREATE PROCEDURE CreatePost
     @PrivateDetails NVARCHAR(255)
 AS
 BEGIN
+    DECLARE @NewItemID INT;
+    
+    -- Insert new item
     INSERT INTO Items (UserID, Title, ItemDescription, CategoryID, ItemStatus, ItemLocation, ImageURL, PrivateDetails)
     VALUES (@UserID, @Title, @ItemDescription, @CategoryID, @ItemStatus, @ItemLocation, @ImageURL, @PrivateDetails);
+
+    -- Get the newly inserted ItemID
+    SET @NewItemID = SCOPE_IDENTITY();
+
+    -- Call notification procedure
+    EXEC AddPostNotification @NewItemID, @UserID;
 END;
 
--- Stored Procedure: Delete a Post
-CREATE PROCEDURE DeletePost
+GO
+CREATE OR ALTER PROCEDURE DeletePost
     @ItemID INT
 AS
 BEGIN
     DELETE FROM Items WHERE ItemID = @ItemID;
 END;
 
---search a post
-CREATE PROCEDURE SearchPosts
-    @SearchTerm NVARCHAR(100)
+GO
+CREATE OR ALTER PROCEDURE GetCategorizedPosts
+    @CategoryName NVARCHAR(100)
 AS
 BEGIN
-    SELECT i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
-           i.ItemLocation, i.DateReported, i.ImageURL, u.FullName AS PostedBy
-    FROM Items i
-    JOIN Users u ON i.UserID = u.UserID
-    LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
-    WHERE i.Title LIKE '%' + @SearchTerm + '%'
-       OR i.ItemDescription LIKE '%' + @SearchTerm + '%'
-       OR i.ItemLocation LIKE '%' + @SearchTerm + '%'
-       OR c.CategoryName LIKE '%' + @SearchTerm + '%'
-    ORDER BY i.DateReported DESC;
+    SELECT * FROM AllPosts WHERE CategoryName = @CategoryName ORDER BY DateReported DESC;
 END;
 
---Procedure: Claims 
-CREATE PROCEDURE ClaimItem
+GO
+CREATE OR ALTER PROCEDURE GetPostComments
+    @PostID INT
+AS
+BEGIN
+    SELECT c.CommentID, u.FullName AS CommentedBy, c.CommentText, c.CreatedAt
+    FROM Comments c
+    JOIN Users u ON c.UserID = u.UserID
+    WHERE c.PostID = @PostID
+    ORDER BY c.CreatedAt DESC;
+END;
+
+GO
+GO
+CREATE OR ALTER PROCEDURE SP_GetItemsByFilters
+    @Type NVARCHAR(10) = NULL,          -- 'lost' or 'found'
+    @Status NVARCHAR(20) = NULL,        -- e.g. 'available', 'claimed'
+    @RadiusKm FLOAT = NULL,             -- optional radius in km
+    @Latitude FLOAT = NULL,             -- required if RadiusKm is provided
+    @Longitude FLOAT = NULL             -- required if RadiusKm is provided
+AS
+BEGIN
+    SELECT 
+        i.ItemID,
+        i.Title,
+        i.ItemDescription AS description,
+        i.ItemStatus AS type,
+        l.Latitude,
+        l.Longitude,
+        u.FullName AS owner_name,
+        u.Email,
+        -- Only calculate distance if radius filter is used
+        CASE 
+            WHEN @RadiusKm IS NOT NULL THEN
+                (6371 * ACOS(
+                    COS(RADIANS(@Latitude)) 
+                    * COS(RADIANS(l.Latitude)) 
+                    * COS(RADIANS(l.Longitude) - RADIANS(@Longitude)) 
+                    + SIN(RADIANS(@Latitude)) 
+                    * SIN(RADIANS(l.Latitude))
+                ))
+            ELSE NULL
+        END AS distance_km
+    FROM Items i
+    JOIN Users u ON i.UserID = u.UserID
+    LEFT JOIN Locations l ON i.ItemID = l.ItemID
+    WHERE
+        (@Type IS NULL OR i.ItemStatus = @Type)             -- Filter by item type (lost/found)
+        AND (@Status IS NULL OR i.ItemStatus = @Status)   -- Filter by item status
+        AND (
+            @RadiusKm IS NULL 
+            OR (6371 * ACOS(
+                COS(RADIANS(@Latitude)) 
+                * COS(RADIANS(l.Latitude)) 
+                * COS(RADIANS(l.Longitude) - RADIANS(@Longitude)) 
+                + SIN(RADIANS(@Latitude)) 
+                * SIN(RADIANS(l.Latitude))
+              )) <= @RadiusKm
+        );
+END;
+
+GO
+-- 🔹 Claims & Verification
+CREATE OR ALTER PROCEDURE ClaimItem
     @ItemID INT,
     @UserID INT,
     @ClaimDetails NVARCHAR(255)
 AS
 BEGIN
-    INSERT INTO Claims (ItemID, UserID, ClaimDetails)
-    VALUES (@ItemID, @UserID, @ClaimDetails);
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        -- Check if item exists
+        IF NOT EXISTS (SELECT 1 FROM Items WHERE ItemID = @ItemID)
+        BEGIN
+            RAISERROR('Item does not exist.', 16, 1);
+            RETURN;
+        END
+        
+        -- Check if user has already claimed this item
+        IF EXISTS (SELECT 1 FROM Claims WHERE ItemID = @ItemID AND UserID = @UserID)
+        BEGIN
+            RAISERROR('You have already claimed this item.', 16, 1);
+            RETURN;
+        END
+        
+        -- Check if item is already claimed by this user and approved
+        IF EXISTS (
+            SELECT 1 
+            FROM Items 
+            WHERE ItemID = @ItemID 
+              AND ItemStatus = 'Claimed' 
+              AND ClaimedBy = @UserID
+        )
+        BEGIN
+            RAISERROR('You have already successfully claimed this item.', 16, 1);
+            RETURN;
+        END
+        
+        -- Insert the claim
+        INSERT INTO Claims (ItemID, UserID, ClaimDetails)
+        VALUES (@ItemID, @UserID, @ClaimDetails);
+        
+        -- Notify the item owner about the new claim
+        DECLARE @ItemOwnerID INT;
+        DECLARE @ItemTitle NVARCHAR(255);
+        
+        SELECT @ItemOwnerID = UserID, @ItemTitle = Title
+        FROM Items
+        WHERE ItemID = @ItemID;
+        
+        INSERT INTO Notifications (UserID, ItemID, Message)
+        VALUES (@ItemOwnerID, @ItemID, 'Someone has claimed your item "' + @ItemTitle + '". An admin will review the claim.');
+        
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
 END;
 
-
--- View: Claims on Posts
-CREATE VIEW ClaimsOnPosts AS
-SELECT c.ClaimID, c.ItemID, u.FullName AS ClaimedBy, c.ClaimDetails, 
-       c.ClaimsStatus, c.CreatedAt, a.FullName AS ReviewedBy
-FROM Claims c
-JOIN Users u ON c.UserID = u.UserID
-LEFT JOIN Users a ON c.AdminReviewedBy = a.UserID;
-
--- Stored Procedure: Retrieve Claims on an Item
-CREATE PROCEDURE GetClaimsOnItem
+GO
+CREATE OR ALTER PROCEDURE GetClaimsOnItem
     @ItemID INT
 AS
 BEGIN
     SELECT * FROM ClaimsOnPosts WHERE ItemID = @ItemID;
 END;
 
--- Stored Procedure: Upvote or Downvote a Claim
-CREATE PROCEDURE VoteClaim
+GO
+CREATE OR ALTER PROCEDURE VoteClaim
     @ClaimID INT,
     @UserID INT,
     @VoteType NVARCHAR(10)
@@ -408,9 +577,8 @@ BEGIN
         INSERT (ClaimID, UserID, VoteType) VALUES (@ClaimID, @UserID, @VoteType);
 END;
 
-go
--- Stored Procedure: View Claim Verification Status
-CREATE PROCEDURE GetClaimVotes
+GO
+CREATE OR ALTER PROCEDURE GetClaimVotes
     @ClaimID INT
 AS
 BEGIN
@@ -420,14 +588,13 @@ BEGIN
     WHERE ClaimID = @ClaimID;
 END;
 
-go
---Procedure: delete claim 
-CREATE PROCEDURE DeleteClaim
+GO
+CREATE OR ALTER PROCEDURE DeleteClaim
     @ClaimID INT,
     @UserID INT
 AS
 BEGIN
---Check if the user is the claimant or an admin
+    -- Check if the user is the claimant or an admin
     IF EXISTS (
         SELECT 1 FROM Claims c
         JOIN Users u ON c.UserID = u.UserID
@@ -442,9 +609,61 @@ BEGIN
     END
 END;
 
-go
--- Stored Procedure: Send a Message
-CREATE PROCEDURE SendMessage
+GO
+CREATE OR ALTER PROCEDURE SP_GetClaimsByItemId
+    @ItemID INT,
+    @Type NVARCHAR(10) = NULL,         -- 'lost' or 'found'
+    @Status NVARCHAR(20) = NULL,       -- 'claimed', 'unclaimed', etc.
+    @RadiusKm FLOAT = NULL,            -- optional radius in km
+    @Latitude FLOAT = NULL,            -- required if RadiusKm is provided
+    @Longitude FLOAT = NULL            -- required if RadiusKm is provided
+AS
+BEGIN
+    SELECT 
+        c.ClaimID,
+        c.ItemID,
+        c.UserID,
+        c.ClaimsStatus AS status,
+        c.CreatedAt AS claimed_at,
+        i.ItemStatus AS type,
+        l.Latitude,
+        l.Longitude,
+        u.FullName AS claimer_name,
+        u.Email,
+        -- Only calculated if radius filter used
+        CASE 
+            WHEN @RadiusKm IS NOT NULL THEN
+                (6371 * ACOS(
+                    COS(RADIANS(@Latitude)) 
+                    * COS(RADIANS(l.Latitude)) 
+                    * COS(RADIANS(l.Longitude) - RADIANS(@Longitude)) 
+                    + SIN(RADIANS(@Latitude)) 
+                    * SIN(RADIANS(l.Latitude))
+                ))
+            ELSE NULL
+        END AS distance_km
+    FROM Claims c
+    JOIN Items i ON c.ItemID = i.ItemID
+    JOIN Users u ON c.UserID = u.UserID
+    LEFT JOIN Locations l ON i.ItemID = l.ItemID
+    WHERE c.ItemID = @ItemID
+      AND (@Type IS NULL OR i.ItemStatus = @Type)
+      AND (@Status IS NULL OR c.ClaimsStatus = @Status)
+      AND (
+          @RadiusKm IS NULL 
+          OR (6371 * ACOS(
+                COS(RADIANS(@Latitude)) 
+                * COS(RADIANS(l.Latitude)) 
+                * COS(RADIANS(l.Longitude) - RADIANS(@Longitude)) 
+                + SIN(RADIANS(@Latitude)) 
+                * SIN(RADIANS(l.Latitude))
+              )) <= @RadiusKm
+      );
+END;
+
+-- 🔹 Messaging & Notifications
+GO
+CREATE OR ALTER PROCEDURE SendMessage
     @SenderID INT,
     @ReceiverID INT,
     @PostID INT,
@@ -455,27 +674,24 @@ BEGIN
     VALUES (@SenderID, @ReceiverID, @PostID, @MessageText);
 END;
 
-
-go
--- Stored Procedure: Retrieve Messages Between Two Users
-CREATE PROCEDURE GetMessagesBetweenUsers
+GO
+CREATE OR ALTER PROCEDURE GetMessagesBetweenUsers
     @UserID1 INT,
     @UserID2 INT
 AS
 BEGIN
-    SELECT m.MessageID, u1.FullName AS Sender, u2.FullName AS Receiver, 
+    SELECT m.MessageID, u1.FullName AS Sender, u2.FullName AS Receiver,
            m.MessageText, m.CreatedAt, m.IsRead
     FROM Messages m
     JOIN Users u1 ON m.SenderID = u1.UserID
     JOIN Users u2 ON m.ReceiverID = u2.UserID
-    WHERE (m.SenderID = @UserID1 AND m.ReceiverID = @UserID2) 
+    WHERE (m.SenderID = @UserID1 AND m.ReceiverID = @UserID2)
        OR (m.SenderID = @UserID2 AND m.ReceiverID = @UserID1)
     ORDER BY m.CreatedAt;
 END;
 
-go
--- Stored Procedure: Retrieve Notifications for a User
-CREATE PROCEDURE GetUserNotifications
+GO
+CREATE OR ALTER PROCEDURE GetUserNotifications
     @UserID INT
 AS
 BEGIN
@@ -485,9 +701,8 @@ BEGIN
     ORDER BY CreatedAt DESC;
 END;
 
-go
--- Procedure: Add Notification When a New Post is Create
-CREATE PROCEDURE AddPostNotification
+GO
+CREATE OR ALTER PROCEDURE AddPostNotification
     @ItemID INT,
     @UserID INT
 AS
@@ -499,23 +714,146 @@ BEGIN
     CROSS JOIN Items I
     WHERE U.UserID <> @UserID AND I.ItemID = @ItemID;
 END;
-GO
 
-go 
--- Trigger: Automatically Add Notification After New Item Inserted
-CREATE TRIGGER trg_AddPostNotification
+
+
+GO 
+CREATE OR ALTER PROCEDURE UpdateItem
+    @ItemID INT,
+    @UserID INT,  -- For authorization
+    @Title NVARCHAR(255) = NULL,
+    @ItemDescription NVARCHAR(MAX) = NULL,
+    @CategoryID INT = NULL,
+    @ItemLocation NVARCHAR(255) = NULL,
+    @ImageURL NVARCHAR(255) = NULL,
+    @PrivateDetails NVARCHAR(255) = NULL
+AS
+BEGIN
+    -- Check if user owns the item or is admin
+    IF NOT EXISTS (
+        SELECT 1 FROM Items i
+        JOIN Users u ON i.UserID = u.UserID
+        WHERE i.ItemID = @ItemID AND (i.UserID = @UserID OR u.UserRole = 'Admin')
+    )
+    BEGIN
+        RAISERROR('You are not authorized to update this item.', 16, 1);
+        RETURN;
+    END
+    
+    -- Check if item is already claimed
+    IF EXISTS (SELECT 1 FROM Items WHERE ItemID = @ItemID AND ItemStatus = 'Claimed')
+    BEGIN
+        RAISERROR('Cannot update a claimed item.', 16, 1);
+        RETURN;
+    END
+    
+    -- Update the item
+    UPDATE Items
+    SET 
+        Title = ISNULL(@Title, Title),
+        ItemDescription = ISNULL(@ItemDescription, ItemDescription),
+        CategoryID = ISNULL(@CategoryID, CategoryID),
+        ItemLocation = ISNULL(@ItemLocation, ItemLocation),
+        ImageURL = ISNULL(@ImageURL, ImageURL),
+        PrivateDetails = ISNULL(@PrivateDetails, PrivateDetails)
+    WHERE ItemID = @ItemID;
+END;
+
+-- =========================
+-- 🔄 TRIGGERS
+-- =========================
+
+GO
+CREATE TRIGGER trg_Users_Delete_All
+ON Users
+INSTEAD OF DELETE
+AS
+BEGIN
+    -- Clean Messages
+    UPDATE Messages SET SenderID = NULL WHERE SenderID IN (SELECT UserID FROM DELETED);
+    UPDATE Messages SET ReceiverID = NULL WHERE ReceiverID IN (SELECT UserID FROM DELETED);
+
+    -- Delete Notifications
+    DELETE FROM Notifications WHERE UserID IN (SELECT UserID FROM DELETED);
+
+    -- Delete Comments
+    DELETE FROM Comments WHERE UserID IN (SELECT UserID FROM DELETED);
+
+    -- Delete Claims
+    DELETE FROM Claims WHERE UserID IN (SELECT UserID FROM DELETED);
+
+    -- Delete CommunityVerification
+    DELETE FROM CommunityVerification WHERE UserID IN (SELECT UserID FROM DELETED);
+
+    -- Delete Flags
+    DELETE FROM Flags WHERE ReportedBy IN (SELECT UserID FROM DELETED);
+
+	--
+	    DELETE FROM Item WHERE UserID IN (SELECT UserID FROM DELETED);
+
+    -- Finally delete user
+    DELETE FROM Users WHERE UserID IN (SELECT UserID FROM DELETED);
+END;
+
+GO
+CREATE TRIGGER trg_Items_Delete_All
 ON Items
+INSTEAD OF DELETE
+AS
+BEGIN
+    -- Delete Messages
+    DELETE FROM Messages WHERE PostID IN (SELECT ItemID FROM DELETED);
+
+    -- Delete Comments
+    DELETE FROM Comments WHERE PostID IN (SELECT ItemID FROM DELETED);
+
+    -- Delete Claims
+    DELETE FROM Claims WHERE ItemID IN (SELECT ItemID FROM DELETED);
+
+    -- Finally delete item
+    DELETE FROM Item WHERE ItemID IN (SELECT ItemID FROM DELETED);
+END;
+
+GO
+CREATE TRIGGER trg_Claims_Insert_ValidationAndCleanup
+ON Claims
 AFTER INSERT
 AS
 BEGIN
-    SET NOCOUNT ON;
+    -- 1. Prevent self-claim
+    IF EXISTS (
+        SELECT 1
+        FROM inserted i
+        JOIN Items it ON i.ItemID = it.ItemID
+        WHERE i.UserID = it.UserID
+    )
+    BEGIN
+        RAISERROR ('Users cannot claim their own items.', 16, 1);
+        ROLLBACK TRANSACTION;
+        RETURN;
+    END
 
-    DECLARE @ItemID INT, @UserID INT;
-
-    -- Assuming only one row is inserted at a time
-    SELECT TOP 1 @ItemID = ItemID, @UserID = UserID FROM INSERTED;
-
-    -- Call the procedure to add notifications for other users
-    EXEC AddPostNotification @ItemID, @UserID;
+    -- 2. Delete community verifications for claiming user
+    DELETE cv
+    FROM CommunityVerification cv
+    JOIN inserted i ON cv.UserID = i.UserID;
 END;
 
+GO
+-- Validate that ReportedBy user exists
+CREATE TRIGGER trg_ValidateReportedByUser
+ON Flags
+AFTER INSERT
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1 
+        FROM inserted i
+        LEFT JOIN Users u ON i.ReportedBy = u.UserID
+        WHERE u.UserID IS NULL
+    )
+    BEGIN
+        RAISERROR('ReportedBy user does not exist in Users table.', 16, 1);
+        ROLLBACK TRANSACTION;
+    END
+END;

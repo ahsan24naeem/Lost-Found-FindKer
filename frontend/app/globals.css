@@ -10,7 +10,7 @@
     --card: 60 30% 98%;
     --card-foreground: 120 10% 10%;
 
-    --popover: 60 30% 98%;
+    --popover: 60 30% 100%;
     --popover-foreground: 120 10% 10%;
 
     /* Beige-greenish color */
@@ -43,7 +43,7 @@
     --card: 80 15% 15%;
     --card-foreground: 80 10% 95%;
 
-    --popover: 80 15% 15%;
+    --popover: 80 15% 20%;
     --popover-foreground: 80 10% 95%;
 
     --primary: 80 30% 50%;

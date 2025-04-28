@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Camera, ChevronLeft, MapPin, Upload, X, ImageIcon, Paperclip, Tag, Calendar } from "lucide-react"
@@ -33,6 +33,8 @@ export default function PostItemPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const fileInputRef = useRef(null)
+  const [categories, setCategories] = useState([])
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true)
 
   const [formData, setFormData] = useState({
     title: "",
@@ -47,6 +49,31 @@ export default function PostItemPage() {
     visibility: "public",
     offerReward: false,
   })
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/categories/all')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.details || 'Failed to fetch categories')
+        }
+        const data = await response.json()
+        setCategories(data)
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+        toast({
+          title: "Error",
+          description: error.message || "Failed to load categories. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoadingCategories(false)
+      }
+    }
+
+    fetchCategories()
+  }, [toast])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -84,10 +111,21 @@ export default function PostItemPage() {
     newPreviewImages.splice(index, 1)
     setPreviewImages(newPreviewImages)
   }
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setIsSubmitting(true)
+
+    // Check if user is authenticated
+    if (!user || !user.token) {
+      toast({
+        title: "Error",
+        description: "Please log in to create a post",
+        variant: "destructive",
+      })
+      setIsSubmitting(false)
+      router.push("/login")
+      return
+    }
 
     // Validate form
     if (!formData.title || !formData.description || !formData.category || !formData.date || !formData.location) {
@@ -100,20 +138,131 @@ export default function PostItemPage() {
       return
     }
 
-    // Simulate API call with setTimeout
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      let uploadedImageURLs = []
+   
+      // 1. First upload the images
+      if (images.length > 0) {
+        const uploadPromises = images.map(async (image) => {
+          const formData = new FormData()
+          formData.append('image', image)
+   
+          console.log('Uploading image:', image.name)
+          try {
+            // First test if the upload endpoint is accessible
+            const testResponse = await fetch('http://localhost:5000/api/upload-image/test')
+            if (!testResponse.ok) {
+              throw new Error(`Test endpoint failed: ${testResponse.status} ${testResponse.statusText}`)
+            }
+            const testData = await testResponse.json()
+            console.log('Test endpoint response:', testData)
+
+            // Now try the actual upload
+            const response = await fetch('http://localhost:5000/api/upload-image', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${user.token}`,
+              },
+              body: formData,
+            })
+   
+            console.log('Upload response status:', response.status)
+            const responseText = await response.text()
+            console.log('Raw response:', responseText)
+            
+            if (!response.ok) {
+              let errorData
+              try {
+                errorData = JSON.parse(responseText)
+              } catch (e) {
+                throw new Error(`Server returned non-JSON response: ${responseText}`)
+              }
+              throw new Error(errorData.error || `Failed to upload image: ${response.status} ${response.statusText}`)
+            }
+   
+            let data
+            try {
+              data = JSON.parse(responseText)
+            } catch (e) {
+              throw new Error(`Invalid JSON response: ${responseText}`)
+            }
+
+            if (!data.imageUrl) {
+              throw new Error('No image URL returned from server')
+            }
+            console.log('Successfully uploaded image:', data.imageUrl)
+            return data.imageUrl
+          } catch (error) {
+            console.error('Upload error:', error)
+            throw error
+          }
+        })
+   
+        try {
+          uploadedImageURLs = await Promise.all(uploadPromises)
+          console.log('All images uploaded successfully:', uploadedImageURLs)
+        } catch (error) {
+          console.error('Error uploading images:', error)
+          throw new Error(`Failed to upload images: ${error.message}`)
+        }
+      }
+   
+      // 2. Fetch category ID
+      const categoryResponse = await fetch('http://localhost:5000/api/categories/all')
+      if (!categoryResponse.ok) {
+        throw new Error('Failed to fetch categories')
+      }
+      const categories = await categoryResponse.json()
+      const category = categories.find(c => c.CategoryName === formData.category)
+      if (!category) {
+        throw new Error('Invalid category selected')
+      }
+   
+      // 3. Prepare post data
+      const postData = {
+        userID: user.id,
+        title: formData.title,
+        itemDescription: formData.description,
+        categoryID: category.CategoryID,
+        itemStatus: itemType,
+        itemLocation: formData.location,
+        images: uploadedImageURLs,
+        privateDetails: formData.identifyingFeatures || '',
+      }
+   
+      // 4. Send post data
+      const response = await fetch('http://localhost:5000/api/post/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`,
+        },
+        body: JSON.stringify(postData),
+      })
+   
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create post')
+      }
 
       toast({
         title: "Success",
         description: `Your ${itemType} item has been posted successfully!`,
       })
 
-      // Redirect to home page after successful submission
       router.push("/home")
-    }, 2000)
+    } catch (error) {
+      console.error('Error creating post:', error)
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create post. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-
+  
   return (
     <>
       <Navbar />
@@ -191,17 +340,14 @@ export default function PostItemPage() {
                     required
                   >
                     <SelectTrigger id="category">
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={isLoadingCategories ? "Loading categories..." : "Select category"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="electronics">Electronics</SelectItem>
-                      <SelectItem value="jewelry">Jewelry</SelectItem>
-                      <SelectItem value="clothing">Clothing</SelectItem>
-                      <SelectItem value="accessories">Accessories</SelectItem>
-                      <SelectItem value="documents">Documents</SelectItem>
-                      <SelectItem value="keys">Keys</SelectItem>
-                      <SelectItem value="bags">Bags</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.CategoryID} value={category.CategoryName}>
+                          {category.CategoryName}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
