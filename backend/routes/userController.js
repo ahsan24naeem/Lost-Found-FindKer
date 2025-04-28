@@ -54,12 +54,22 @@ export const loginUser = async (req, res) => {
         );
 
         console.log('Login successful, token generated');
+        
+        // Set the auth cookie
+        res.cookie('auth', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 3600000 // 1 hour in milliseconds
+        });
+
         res.json({ 
             message: "Login successful", 
-            token,
-            userId: user.UserID,
-            email: user.Email,
-            role: user.UserRole
+            user: {
+                id: user.UserID,
+                email: user.Email,
+                role: user.UserRole
+            }
         });
     } catch (error) {
         console.error("Login error details:", {

@@ -33,6 +33,11 @@ export function AuthProvider({ children }) {
     }
 
     checkAuth()
+    
+    // Clear user state when component unmounts
+    return () => {
+      setUser(null);
+    };
   }, [])
 
   // Login function
@@ -57,7 +62,7 @@ export function AuthProvider({ children }) {
       }
       
       setUser(data.user);
-      router.replace('/home');
+      router.push('/home'); // Redirect to home page after successful login
     } catch (error) {
       console.error('Login error:', error);
       throw error;

@@ -9,7 +9,7 @@ const publicPaths = new Set([
   "/faq",
   "/contact",
   "/login",
-  "/register"
+  "/register",
 ])
 
 export function middleware(request) {
