@@ -36,3 +36,23 @@ export const getMessagesBetweenUsers = async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 };
+
+// Get all users a specific user has exchanged messages with
+export const getMessageContacts = async (req, res) => {
+    const { userID } = req.params;
+    
+    try {
+        let pool = await sql.connect(dbConfig);
+        let result = await pool.request()
+            .input("SpecificUserID", sql.Int, userID)
+            .execute("GetMessageContacts");
+
+        res.status(200).json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching message contacts:", error);
+        res.status(500).json({ 
+            error: "Server error",
+            details: error.message 
+        });
+    }
+};

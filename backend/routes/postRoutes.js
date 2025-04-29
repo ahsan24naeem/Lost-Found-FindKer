@@ -4,7 +4,6 @@ import {
     getAllPosts, 
     getRecentPosts, 
     getCategorizedPosts, 
-    getPostComments, 
     createPost, 
     deletePost,
     searchPosts
@@ -17,10 +16,8 @@ router.get("/all", getAllPosts);
 // Protected routes - require authentication
 router.post("/create", createPost);
 router.delete("/:itemID", deletePost);
-
 router.get("/recent", getRecentPosts);
 router.get("/category/:categoryName", getCategorizedPosts);
-router.get("/:postID/comments", getPostComments);
 router.get("/search", searchPosts);
 
 export default router;

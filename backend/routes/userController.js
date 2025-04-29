@@ -68,7 +68,12 @@ export const loginUser = async (req, res) => {
             user: {
                 id: user.UserID,
                 email: user.Email,
-                role: user.UserRole
+                name: user.FullName,
+                role: user.UserRole,
+                avatar: user.ProfilePic,
+                creationDate: user.CreatedAt,
+                gender: user.Gender,
+                phoneNumber: user.PhoneNumber
             }
         });
     } catch (error) {
@@ -178,20 +183,31 @@ export const getUserClaims = async (req, res) => {
 // Update user details
 export const updateUser = async (req, res) => {
     const { userID } = req.params;
-    const { fullName, passwordHash, phoneNumber } = req.body;
+    let { fullName, password, phoneNumber, email, profilePic } = req.body;
+    let passwordHash = null;
     try {
+        // If password is provided, hash it
+        if (password) {
+            const saltRounds = 10;
+            passwordHash = await bcrypt.hash(password, saltRounds);
+        }
         let pool = await sql.connect(dbConfig);
         await pool.request()
-            .input("UserID", userID)
-            .input("FullName", fullName)
-            .input("PasswordHash", passwordHash)
-            .input("PhoneNumber", phoneNumber)
-            .execute("UpdateUser");
+            .input("UserID", sql.Int, userID)
+            .input("FullName", sql.NVarChar, fullName || null)
+            .input("PasswordHash", sql.NVarChar, passwordHash || null)
+            .input("PhoneNumber", sql.NVarChar, phoneNumber || null)
+            .input("Email", sql.NVarChar, email || null)
+            .input("ProfilePic", sql.VarChar, profilePic || null)
+            .execute("UpdateUserProfile");
+
         res.status(200).json({ message: "User updated successfully" });
     } catch (err) {
+        console.error("Error updating user:", err);
         res.status(500).json({ message: "Error updating user", error: err.message });
     }
 };
+
 
 // Delete a user
 export const deleteUser = async (req, res) => {
@@ -200,7 +216,7 @@ export const deleteUser = async (req, res) => {
         let pool = await sql.connect(dbConfig);
         await pool.request()
             .input("UserID", userID)
-            .execute("DeleteUser");
+            .execute("DeleteUserProfile");
         res.status(200).json({ message: "User deleted successfully" });
     } catch (err) {
         res.status(500).json({ message: "Error deleting user", error: err.message });

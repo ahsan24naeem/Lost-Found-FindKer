@@ -66,18 +66,6 @@ export default function SidebarNav({ className }) {
           </Link>
         </Button>
         <Button variant="ghost" className="w-full justify-start" asChild>
-          <Link href="/lost">
-            <Search className="mr-2 h-5 w-5" />
-            Lost Items
-          </Link>
-        </Button>
-        <Button variant="ghost" className="w-full justify-start" asChild>
-          <Link href="/found">
-            <Search className="mr-2 h-5 w-5" />
-            Found Items
-          </Link>
-        </Button>
-        <Button variant="ghost" className="w-full justify-start" asChild>
           <Link href="/post">
             <Plus className="mr-2 h-5 w-5" />
             Post Item

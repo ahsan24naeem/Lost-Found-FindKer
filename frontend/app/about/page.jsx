@@ -10,28 +10,22 @@ export default function AboutPage() {
   // Team members data
   const teamMembers = [
     {
-      name: "John Doe",
-      role: "Founder & CEO",
-      avatar: "/placeholder.svg?height=200&width=200",
+      name: "Ahsan Naeem",
+      role: "CEO",
+      avatar: "./images1.png?height=200&width=200",
       bio: "John founded FindIt with a mission to help people reconnect with their lost belongings.",
     },
     {
-      name: "Jane Smith",
+      name: "Aaiza Iqbal",
       role: "CTO",
       avatar: "/placeholder.svg?height=200&width=200",
       bio: "Jane leads our technology team, building innovative solutions for lost and found management.",
     },
     {
-      name: "Mike Johnson",
-      role: "Head of Community",
+      name: "Zoha Fatima",
+      role: "COO",
       avatar: "/placeholder.svg?height=200&width=200",
       bio: "Mike ensures our community stays helpful, supportive, and engaged.",
-    },
-    {
-      name: "Sarah Williams",
-      role: "Head of Operations",
-      avatar: "/placeholder.svg?height=200&width=200",
-      bio: "Sarah oversees day-to-day operations and ensures everything runs smoothly.",
     },
   ]
 

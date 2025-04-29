@@ -180,7 +180,7 @@ export default function FeedItemCard({ item }) {
   const handleSendMessage = async () => {
     if (!message.trim()) return
 
-    await fetch("http://localhost:5000/api/message/message", {
+    await fetch("http://localhost:5000/api/message/send-message", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -251,6 +251,9 @@ export default function FeedItemCard({ item }) {
     return `${window.location.origin}/post/${transformedItem.id || "123"}`
   }
 
+  // Determine if the current user can update the item status
+  const canUpdateStatus = user && (user.id === transformedItem.user.id || user.isAdmin)
+
   return (
     <>
       <Card className="w-full mb-4">
@@ -291,88 +294,7 @@ export default function FeedItemCard({ item }) {
           </div>
         </CardHeader>
         <CardContent className="p-4 pt-0">
-          <Dialog>
-            <DialogTrigger asChild>
-              <h3 className="mb-1 text-lg font-semibold hover:text-primary cursor-pointer">{transformedItem.title}</h3>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>{transformedItem.title}</DialogTitle>
-                <DialogDescription>
-                  Posted by {transformedItem.user.name} • {formatDate(transformedItem.date)}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="overflow-hidden rounded-md">
-                  <img src={transformedItem.images[0] || "/placeholder.svg"} alt={transformedItem.title} className="h-auto w-full" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium">Description</h4>
-                  <p className="text-sm text-muted-foreground">{transformedItem.description}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium">Category</h4>
-                    <p className="text-sm text-muted-foreground">{transformedItem.category}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium">Location</h4>
-                    <p className="text-sm text-muted-foreground">{transformedItem.location}</p>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <Button onClick={() => setShowContactDialog(true)}>
-                    Contact {transformedItem.type === "lost" ? "Owner" : "Finder"}
-                  </Button>
-                  <Button variant="outline" onClick={() => setShowMessageDialog(true)}>
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Send Message
-                  </Button>
-                </div>
-                <div className="mt-4 border-t pt-4">
-                  <h4 className="text-sm font-medium mb-2">Item Status</h4>
-                  <div className="flex gap-2">
-                    <Badge variant={itemStatus === "found" ? "default" : "outline"} className="px-3 py-1">
-                      {itemStatus === "found" ? "Found ✓" : "Found"}
-                    </Badge>
-                    <Badge variant={itemStatus === "lost" ? "destructive" : "outline"} className="px-3 py-1">
-                      {itemStatus === "lost" ? "Lost ✓" : "Lost"}
-                    </Badge>
-                    <Badge variant={itemStatus === "claimed" ? "success" : "outline"} className="px-3 py-1">
-                      {itemStatus === "claimed" ? "Claimed ✓" : "Claimed"}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    {itemStatus !== "found" && (
-                      <Button size="sm" variant="outline" onClick={handleMarkAsFound}>
-                        Mark as Found
-                      </Button>
-                    )}
-                    {itemStatus !== "lost" && (
-                      <Button size="sm" variant="outline" onClick={handleMarkAsLost}>
-                        Mark as Lost
-                      </Button>
-                    )}
-                    {itemStatus !== "claimed" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setItemStatus("claimed")
-                          toast({
-                            title: "Item Status Updated",
-                            description: "This item has been marked as claimed",
-                          })
-                        }}
-                      >
-                        Mark as Claimed
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <h3 className="mb-1 text-lg font-semibold">{transformedItem.title}</h3>
           <p className="mb-2 text-sm text-muted-foreground">{transformedItem.description}</p>
           <div className="mb-2 text-xs text-muted-foreground">
             <span className="font-medium">Location:</span> {transformedItem.location}
@@ -380,94 +302,56 @@ export default function FeedItemCard({ item }) {
           <div className="mb-2 text-xs text-muted-foreground">
             <span className="font-medium">Category:</span> {transformedItem.category}
           </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <div className="overflow-hidden rounded-md cursor-pointer">
-                <img
-                  src={transformedItem.images[0] || "/placeholder.svg"}
-                  alt={transformedItem.title}
-                  className="h-auto w-full transition-transform duration-300 hover:scale-105"
-                />
-              </div>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>{transformedItem.title}</DialogTitle>
-                <DialogDescription>
-                  Posted by {transformedItem.user.name} • {formatDate(transformedItem.date)}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="overflow-hidden rounded-md">
-                  <img src={transformedItem.images[0] || "/placeholder.svg"} alt={transformedItem.title} className="h-auto w-full" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium">Description</h4>
-                  <p className="text-sm text-muted-foreground">{transformedItem.description}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-medium">Category</h4>
-                    <p className="text-sm text-muted-foreground">{transformedItem.category}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium">Location</h4>
-                    <p className="text-sm text-muted-foreground">{transformedItem.location}</p>
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <Button onClick={() => setShowContactDialog(true)}>
-                    Contact {transformedItem.type === "lost" ? "Owner" : "Finder"}
+          <div className="overflow-hidden rounded-md">
+            <img
+              src={transformedItem.images[0] || "/placeholder.svg"}
+              alt={transformedItem.title}
+              className="h-auto w-full"
+            />
+          </div>
+          <div className="mt-4 border-t pt-4">
+            <h4 className="text-sm font-medium mb-2">Item Status</h4>
+            <div className="flex gap-2">
+              <Badge variant={itemStatus === "found" ? "default" : "outline"} className="px-3 py-1">
+                {itemStatus === "found" ? "Found ✓" : "Found"}
+              </Badge>
+              <Badge variant={itemStatus === "lost" ? "destructive" : "outline"} className="px-3 py-1">
+                {itemStatus === "lost" ? "Lost ✓" : "Lost"}
+              </Badge>
+              <Badge variant={itemStatus === "claimed" ? "success" : "outline"} className="px-3 py-1">
+                {itemStatus === "claimed" ? "Claimed ✓" : "Claimed"}
+              </Badge>
+            </div>
+            {canUpdateStatus && (
+              <div className="flex gap-2 mt-2">
+                {itemStatus !== "found" && (
+                  <Button size="sm" variant="outline" onClick={handleMarkAsFound}>
+                    Mark as Found
                   </Button>
-                  <Button variant="outline" onClick={() => setShowMessageDialog(true)}>
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    Send Message
+                )}
+                {itemStatus !== "lost" && (
+                  <Button size="sm" variant="outline" onClick={handleMarkAsLost}>
+                    Mark as Lost
                   </Button>
-                </div>
-                <div className="mt-4 border-t pt-4">
-                  <h4 className="text-sm font-medium mb-2">Item Status</h4>
-                  <div className="flex gap-2">
-                    <Badge variant={itemStatus === "found" ? "default" : "outline"} className="px-3 py-1">
-                      {itemStatus === "found" ? "Found ✓" : "Found"}
-                    </Badge>
-                    <Badge variant={itemStatus === "lost" ? "destructive" : "outline"} className="px-3 py-1">
-                      {itemStatus === "lost" ? "Lost ✓" : "Lost"}
-                    </Badge>
-                    <Badge variant={itemStatus === "claimed" ? "success" : "outline"} className="px-3 py-1">
-                      {itemStatus === "claimed" ? "Claimed ✓" : "Claimed"}
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    {itemStatus !== "found" && (
-                      <Button size="sm" variant="outline" onClick={handleMarkAsFound}>
-                        Mark as Found
-                      </Button>
-                    )}
-                    {itemStatus !== "lost" && (
-                      <Button size="sm" variant="outline" onClick={handleMarkAsLost}>
-                        Mark as Lost
-                      </Button>
-                    )}
-                    {itemStatus !== "claimed" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setItemStatus("claimed")
-                          toast({
-                            title: "Item Status Updated",
-                            description: "This item has been marked as claimed",
-                          })
-                        }}
-                      >
-                        Mark as Claimed
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                )}
+                {itemStatus !== "claimed" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setItemStatus("claimed")
+                      toast({
+                        title: "Item Status Updated",
+                        description: "This item has been marked as claimed",
+                      })
+                    }}
+                  >
+                    Mark as Claimed
+                  </Button>
+                )}
               </div>
-            </DialogContent>
-          </Dialog>
+            )}
+          </div>
         </CardContent>
         <CardFooter className="flex flex-col p-0">
           <div className="flex items-center justify-between border-t p-2">

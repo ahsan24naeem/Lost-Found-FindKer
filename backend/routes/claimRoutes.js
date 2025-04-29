@@ -4,7 +4,8 @@ import {
     getClaimsOnItem,
     voteClaim,
     getClaimVotes,
-    deleteClaim
+    deleteClaim,
+    adminProcessClaim 
 } from "./claimController.js";
 
 const router = express.Router();
@@ -23,5 +24,8 @@ router.get("/claim/votes/:claimID", getClaimVotes);
 
 // Delete a claim
 router.delete("/claim", deleteClaim);
+
+//process a claim
+router.post('/admin/process-claim', adminProcessClaim);
 
 export default router;

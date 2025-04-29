@@ -1,12 +1,13 @@
 import express from "express";
-import { sendMessage, getMessagesBetweenUsers } from "./messageController.js";
+import { sendMessage, getMessagesBetweenUsers, getMessageContacts } from "./messageController.js";
 
 const router = express.Router();
 
 // Send a message
-router.post("/message", sendMessage);
-
+router.post("/send-message", sendMessage);
 // Get messages between two users
-router.get("/messages/:userID1/:userID2", getMessagesBetweenUsers);
+router.get("/messagesBetweenUsers/:userID1/:userID2", getMessagesBetweenUsers);
+
+router.get("/contacts/:userID", getMessageContacts);
 
 export default router;

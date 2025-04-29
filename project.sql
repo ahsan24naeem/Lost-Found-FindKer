@@ -88,7 +88,7 @@ CREATE TABLE CommunityVerification (
     CONSTRAINT claim_user_unique UNIQUE(ClaimID, UserID)
 );
 
-
+select * from Users
 -- MESSAGES
 CREATE TABLE Messages (
     MessageID INT IDENTITY(1,1) PRIMARY KEY,
@@ -238,16 +238,14 @@ VALUES
 -- =========================
 
 GO
--- View: All PostsCREATE VIEW AllPosts AS
+-- View: All Posts
 CREATE VIEW AllPosts AS
-SELECT TOP 100 PERCENT
-    i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
-    i.ItemLocation, i.DateReported, i.ImageURL, u.FullName AS PostedBy, u.UserID
+SELECT i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
+       i.ItemLocation, i.DateReported, i.ImageURL, u.FullName AS PostedBy, u.UserID
 FROM Items i
 JOIN Users u ON i.UserID = u.UserID
 LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
-ORDER BY i.DateReported DESC;
-
+order by i.DateReported desc;
 
 
 GO
@@ -299,6 +297,7 @@ END;
 
 -- ?????????????????????
 GO
+select * from Users
 CREATE OR ALTER PROCEDURE UpdateUserProfile
     @UserID INT,
     @FullName NVARCHAR(255) = NULL,
@@ -498,7 +497,7 @@ BEGIN
     END
 END;
 
-
+select *  from Notifications
 -- 🔹 Messaging & Notifications
 GO
 CREATE OR ALTER PROCEDURE SendMessage
@@ -519,7 +518,7 @@ CREATE OR ALTER PROCEDURE GetMessagesBetweenUsers
 AS
 BEGIN
     SELECT m.MessageID, u1.FullName AS Sender, u2.FullName AS Receiver,
-           m.MessageText, m.CreatedAt, m.IsRead
+           m.MessageText, m.CreatedAt
     FROM Messages m
     JOIN Users u1 ON m.SenderID = u1.UserID
     JOIN Users u2 ON m.ReceiverID = u2.UserID

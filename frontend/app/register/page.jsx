@@ -83,21 +83,12 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Registration failed')
       }
 
-      // Call the signup function from auth context
-      await signup({
-        name: signupData.name,
-        email: signupData.email,
-        password: signupData.password,
-        phoneNumber: signupData.phoneNumber,
-        gender: signupData.gender,
-      })
-
       toast({
         title: "Success",
-        description: "Your account has been created successfully",
+        description: "Your account has been created successfully. Please log in.",
       })
 
-      router.push("/home")
+      router.push("/login")
     } catch (error) {
       console.error('Registration error:', error)
       toast({

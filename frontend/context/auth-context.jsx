@@ -43,7 +43,16 @@ export function AuthProvider({ children }) {
       }
       
       // Set user state without persisting
-      setUser(data.user);
+      setUser({
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        role: data.user.role,
+        avatar: data.user.avatar,
+        creationDate: data.user.creationDate,
+        gender: data.user.gender,
+        phoneNumber: data.user.phoneNumber
+      });
       
       // Redirect to home page
       router.push('/home');
@@ -85,9 +94,6 @@ export function AuthProvider({ children }) {
         gender: userData.gender,
         isAdmin: false,
         avatar: "/placeholder.svg?height=200&width=200",
-        website: "example.com",
-        bio: "New user on the platform.",
-        location: "New York, NY",
         joinDate: new Date().toISOString().split("T")[0],
       };
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { verifyToken, optionalAuth } from "../middleware/auth.js";
+import { verifyToken } from "../middleware/auth.js";
 import { 
     loginUser,
     getUserProfile, 
@@ -22,12 +22,14 @@ router.post("/logout", logout);
 router.get("/verify", verifyUserToken);
 
 // Protected routes - require authentication
-router.get("/profile:userID", getUserProfile);
-router.put("/update:userID", updateUser);
-router.delete("/delete:userID", deleteUser);
+router.get("/profile/:userID", getUserProfile);
+router.put("/update/:userID", updateUser);
+router.delete("/delete/:userID", deleteUser);
 
 router.get("/items/:userID", getUserItems);
 router.get("/claims/:userID", getUserClaims);
-router.get("/profile/public/:userID", getPublicUserProfile); 
+//router.get("/profile/public/:userID", getPublicUserProfile); 
 
 export default router;
+
+//localhost:5000/api/user/update/:userID

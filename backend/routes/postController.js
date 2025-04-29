@@ -41,20 +41,6 @@ export const getCategorizedPosts = async (req, res) => {
     }
 };
 
-// Get comments for a specific post
-export const getPostComments = async (req, res) => {
-    const { postID } = req.params;
-    try {
-        let pool = await sql.connect(dbConfig);
-        let result = await pool.request()
-            .input("PostID", sql.Int, postID)
-            .execute("GetPostComments");
-        res.status(200).json(result.recordset);
-    } catch (error) {
-        console.error("Error fetching post comments:", error);
-        res.status(500).json({ error: "Server error" });
-    }
-};
 
 // Create a new post
 export const createPost = async (req, res) => {
@@ -82,6 +68,18 @@ export const createPost = async (req, res) => {
             ImageURL: imageURL
         });
         
+        console.log('Database connected successfully');
+        
+        console.log('Executing CreatePost stored procedure with params:', {
+            UserID: userID,
+            Title: title,
+            ItemDescription: itemDescription,
+            CategoryID: categoryID,
+            ItemStatus: itemStatus,
+            ItemLocation: itemLocation,
+            ImageURL: imageURL
+        });
+        
         await pool.request()
             .input("UserID", sql.Int, userID)
             .input("Title", sql.NVarChar, title)
@@ -93,9 +91,12 @@ export const createPost = async (req, res) => {
             .execute("CreatePost");
             
         console.log('Post created successfully');
+            
+        console.log('Post created successfully');
         res.status(201).json({ message: "Post created successfully" });
     } catch (error) {
         console.error("Error creating post:", error);
+        res.status(500).json({ error: "Server error", details: error.message });
         res.status(500).json({ error: "Server error", details: error.message });
     }
 };

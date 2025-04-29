@@ -102,12 +102,6 @@ export default function Navbar() {
             <Link href="/home" className="text-sm font-medium hover:text-primary" onClick={() => setIsMenuOpen(false)}>
               Home
             </Link>
-            <Link href="/lost" className="text-sm font-medium hover:text-primary" onClick={() => setIsMenuOpen(false)}>
-              Lost Items
-            </Link>
-            <Link href="/found" className="text-sm font-medium hover:text-primary" onClick={() => setIsMenuOpen(false)}>
-              Found Items
-            </Link>
             <Link href="/post" className="text-sm font-medium hover:text-primary" onClick={() => setIsMenuOpen(false)}>
               Post Item
             </Link>

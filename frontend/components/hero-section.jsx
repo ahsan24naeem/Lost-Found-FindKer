@@ -17,10 +17,10 @@ export default function HeroSection() {
             </p>
             <div className="flex flex-col gap-2 min-[400px]:flex-row">
               <Button size="lg" asChild>
-                <Link href="/lost">Browse Lost Items</Link>
+                <Link href="/post">Post an Item</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/found">Browse Found Items</Link>
+                <Link href="/home">Browse Items</Link>
               </Button>
             </div>
           </div>

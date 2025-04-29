@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ChevronLeft, User, Lock, Globe, Palette, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -23,22 +23,108 @@ import AuthCheck from "@/components/AuthCheck"
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("account")
   const { toast } = useToast()
+  const { user, setUser, logout } = useAuth()
 
-  // Mock user data
-  const user = {
-    name: "John Doe",
-    username: "johndoe",
-    email: "john.doe@example.com",
-    phone: "+1 (555) 123-4567",
-    avatar: "/placeholder.svg?height=200&width=200",
-    bio: "Lost and found enthusiast. Helping people reconnect with their belongings since 2020.",
+  // State for editable user fields
+  const [form, setForm] = useState({
+    name: user?.name || user?.fullName || "",
+    username: user?.username || "",
+    email: user?.email || "",
+    phone: user?.phone || user?.phoneNumber || "",
+    avatar: user?.avatar || user?.profilePic || "/placeholder.svg?height=200&width=200",
+    bio: user?.bio || "",
+    password: ""
+  })
+
+  // Update form state when user changes
+  useEffect(() => {
+    setForm({
+      name: user?.name || user?.fullName || "",
+      username: user?.username || "",
+      email: user?.email || "",
+      phone: user?.phone || user?.phoneNumber || "",
+      avatar: user?.avatar || user?.profilePic || "/placeholder.svg?height=200&width=200",
+      password: ""
+    })
+  }, [user])
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target
+    setForm((prev) => ({ ...prev, [id]: value }))
   }
 
-  const handleSaveChanges = () => {
-    toast({
-      title: "Changes Saved",
-      description: "Your settings have been updated successfully.",
-    })
+  const handleSaveChanges = async () => {
+    if (!user?.id) return
+    try {
+      const updateData = {
+        fullName: form.name,
+        email: form.email,
+        phoneNumber: form.phone,
+        profilePic: form.avatar
+      };
+
+      // Only include password in update if it's not empty
+      if (form.password) {
+        updateData.password = form.password;
+      }
+
+      const res = await fetch(`http://localhost:5000/api/user/update/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData)
+      });
+
+      if (!res.ok) throw new Error("Failed to update user");
+      
+      toast({
+        title: "Changes Saved",
+        description: "Your settings have been updated successfully."
+      });
+
+      // Update user in context
+      setUser && setUser({ 
+        ...user, 
+        name: form.name, 
+        fullName: form.name,
+        email: form.email, 
+        phone: form.phone, 
+        phoneNumber: form.phone,
+        avatar: form.avatar,
+        profilePic: form.avatar,
+        bio: form.bio 
+      });
+
+      // Clear password field after successful update
+      setForm(prev => ({ ...prev, password: "" }));
+    } catch (err) {
+      toast({
+        title: "Update Failed",
+        description: err.message || "Could not update your settings.",
+        variant: "destructive"
+      });
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/user/delete/${user.id}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error("Failed to delete account");
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been deleted successfully."
+      });
+      await logout();
+    } catch (err) {
+      toast({
+        title: "Delete Failed",
+        description: err.message || "Could not delete your account.",
+        variant: "destructive"
+      });
+    }
   }
 
   return (
@@ -84,25 +170,11 @@ export default function SettingsPage() {
                       Account
                     </TabsTrigger>
                     <TabsTrigger
-                      value="privacy"
-                      className="justify-start rounded-none border-l-2 border-transparent px-3 py-2 text-left data-[state=active]:border-primary"
-                    >
-                      <Lock className="mr-2 h-4 w-4" />
-                      Privacy & Security
-                    </TabsTrigger>
-                    <TabsTrigger
                       value="appearance"
                       className="justify-start rounded-none border-l-2 border-transparent px-3 py-2 text-left data-[state=active]:border-primary"
                     >
                       <Palette className="mr-2 h-4 w-4" />
                       Appearance
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="language"
-                      className="justify-start rounded-none border-l-2 border-transparent px-3 py-2 text-left data-[state=active]:border-primary"
-                    >
-                      <Globe className="mr-2 h-4 w-4" />
-                      Language & Region
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -115,18 +187,13 @@ export default function SettingsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="account">Account</SelectItem>
-                      <SelectItem value="privacy">Privacy & Security</SelectItem>
                       <SelectItem value="appearance">Appearance</SelectItem>
-                      <SelectItem value="language">Language & Region</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="mt-auto hidden md:block">
-                  <Button variant="destructive" className="w-full">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log Out
-                  </Button>
+                  {/* Removing logout button */}
                 </div>
               </div>
 
@@ -141,14 +208,14 @@ export default function SettingsPage() {
                     <CardContent className="space-y-6">
                       <div className="flex flex-col items-center gap-4 sm:flex-row">
                         <Avatar className="h-24 w-24">
-                          <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                          <AvatarImage src={form.avatar || "/placeholder.svg"} alt={form.name} />
+                          <AvatarFallback>{form.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col gap-2">
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" disabled>
                             Change Avatar
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-destructive">
+                          <Button variant="ghost" size="sm" className="text-destructive" disabled>
                             Remove Avatar
                           </Button>
                         </div>
@@ -159,102 +226,29 @@ export default function SettingsPage() {
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                           <Label htmlFor="name">Full Name</Label>
-                          <Input id="name" defaultValue={user.name} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="username">Username</Label>
-                          <Input id="username" defaultValue={user.username} />
+                          <Input id="name" value={form.name} onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="email">Email</Label>
-                          <Input id="email" type="email" defaultValue={user.email} />
+                          <Input id="email" type="email" value={form.email} onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="phone">Phone</Label>
-                          <Input id="phone" defaultValue={user.phone} />
+                          <Input id="phone" value={form.phone} onChange={handleInputChange} />
                         </div>
-                        <div className="space-y-2 sm:col-span-2">
-                          <Label htmlFor="bio">Bio</Label>
-                          <Input id="bio" defaultValue={user.bio} />
+                        <div className="space-y-2">
+                          <Label htmlFor="password">New Password</Label>
+                          <Input id="password" type="password" value={form.password} onChange={handleInputChange} placeholder="Leave blank to keep current password" />
                         </div>
                       </div>
                     </CardContent>
-                    <CardFooter className="flex justify-end gap-2">
-                      <Button variant="outline">Cancel</Button>
-                      <Button onClick={handleSaveChanges}>Save Changes</Button>
+                    <CardFooter className="flex flex-col gap-2 items-end">
+                      <div className="flex gap-2 w-full justify-end">
+                        <Button variant="outline">Cancel</Button>
+                        <Button onClick={handleSaveChanges}>Save Changes</Button>
+                      </div>
+                      <Button variant="destructive" className="w-full mt-4" onClick={handleDeleteAccount}>Delete Account</Button>
                     </CardFooter>
-                  </Card>
-                )}
-
-                {activeTab === "privacy" && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Privacy & Security</CardTitle>
-                      <CardDescription>Manage your privacy settings and account security</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Privacy Settings</h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="private-profile">Private Profile</Label>
-                            <Switch id="private-profile" />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="show-location">Show My Location</Label>
-                            <Switch id="show-location" defaultChecked />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="show-activity">Show My Activity Status</Label>
-                            <Switch id="show-activity" defaultChecked />
-                          </div>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Account Security</h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="two-factor">Two-Factor Authentication</Label>
-                            <Switch id="two-factor" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="current-password">Current Password</Label>
-                            <Input id="current-password" type="password" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="new-password">New Password</Label>
-                            <Input id="new-password" type="password" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="confirm-password">Confirm New Password</Label>
-                            <Input id="confirm-password" type="password" />
-                          </div>
-                          <Button className="mt-2" variant="outline" onClick={handleSaveChanges}>
-                            Change Password
-                          </Button>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Data & Privacy</h3>
-                        <div className="space-y-2">
-                          <Button variant="outline" className="w-full justify-start">
-                            Download Your Data
-                          </Button>
-                          <Button variant="outline" className="w-full justify-start">
-                            Delete Search History
-                          </Button>
-                          <Button variant="destructive" className="w-full justify-start">
-                            Delete Account
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
                   </Card>
                 )}
 
@@ -272,160 +266,15 @@ export default function SettingsPage() {
                           <ThemeToggle />
                         </div>
                       </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Display</h3>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="reduce-motion">Reduce Motion</Label>
-                            <Switch id="reduce-motion" />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="high-contrast">High Contrast</Label>
-                            <Switch id="high-contrast" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Feed Preferences</h3>
-                        <div className="space-y-2">
-                          <div className="space-y-2">
-                            <Label htmlFor="default-view">Default View</Label>
-                            <Select defaultValue="grid">
-                              <SelectTrigger id="default-view">
-                                <SelectValue placeholder="Select view" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="grid">Grid View</SelectItem>
-                                <SelectItem value="list">List View</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="default-tab">Default Tab</Label>
-                            <Select defaultValue="all">
-                              <SelectTrigger id="default-tab">
-                                <SelectValue placeholder="Select tab" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Items</SelectItem>
-                                <SelectItem value="lost">Lost Items</SelectItem>
-                                <SelectItem value="found">Found Items</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
                     </CardContent>
-                    <CardFooter className="flex justify-end gap-2">
-                      <Button variant="outline">Reset to Default</Button>
-                      <Button onClick={handleSaveChanges}>Save Changes</Button>
-                    </CardFooter>
-                  </Card>
-                )}
-
-                {activeTab === "language" && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Language & Region</CardTitle>
-                      <CardDescription>Manage your language and regional preferences</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Language</h3>
-                        <div className="space-y-2">
-                          <Label htmlFor="language">Display Language</Label>
-                          <Select defaultValue="en">
-                            <SelectTrigger id="language">
-                              <SelectValue placeholder="Select language" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="en">English</SelectItem>
-                              <SelectItem value="es">Español</SelectItem>
-                              <SelectItem value="fr">Français</SelectItem>
-                              <SelectItem value="de">Deutsch</SelectItem>
-                              <SelectItem value="zh">中文</SelectItem>
-                              <SelectItem value="ja">日本語</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Region</h3>
-                        <div className="space-y-2">
-                          <Label htmlFor="region">Region</Label>
-                          <Select defaultValue="us">
-                            <SelectTrigger id="region">
-                              <SelectValue placeholder="Select region" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="us">United States</SelectItem>
-                              <SelectItem value="ca">Canada</SelectItem>
-                              <SelectItem value="uk">United Kingdom</SelectItem>
-                              <SelectItem value="au">Australia</SelectItem>
-                              <SelectItem value="eu">European Union</SelectItem>
-                              <SelectItem value="as">Asia</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-medium">Format</h3>
-                        <div className="space-y-2">
-                          <div className="space-y-2">
-                            <Label htmlFor="date-format">Date Format</Label>
-                            <Select defaultValue="mdy">
-                              <SelectTrigger id="date-format">
-                                <SelectValue placeholder="Select date format" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="mdy">MM/DD/YYYY</SelectItem>
-                                <SelectItem value="dmy">DD/MM/YYYY</SelectItem>
-                                <SelectItem value="ymd">YYYY/MM/DD</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="time-format">Time Format</Label>
-                            <Select defaultValue="12h">
-                              <SelectTrigger id="time-format">
-                                <SelectValue placeholder="Select time format" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="12h">12-hour (AM/PM)</SelectItem>
-                                <SelectItem value="24h">24-hour</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-end gap-2">
-                      <Button variant="outline">Cancel</Button>
-                      <Button onClick={handleSaveChanges}>Save Changes</Button>
-                    </CardFooter>
                   </Card>
                 )}
               </div>
             </div>
 
-            {/* Mobile Logout Button */}
+            {/* Mobile Logout Button - Removing this section */}
             <div className="mt-8 md:hidden">
-              <Button variant="destructive" className="w-full">
-                <LogOut className="mr-2 h-4 w-4" />
-                Log Out
-              </Button>
+              {/* Removing logout button */}
             </div>
           </div>
         </main>

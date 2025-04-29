@@ -85,3 +85,25 @@ export const deleteClaim = async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 };
+
+
+// Admin processes a claim (Approve or Reject) new
+export const adminProcessClaim = async (req, res) => {
+    const { claimID, adminID, decision } = req.body; 
+
+    try {
+        let pool = await sql.connect(dbConfig);
+        await pool.request()
+            .input("ClaimID", sql.Int, claimID)
+            .input("AdminID", sql.Int, adminID)
+            .input("Decision", sql.NVarChar, decision)
+            .execute("AdminProcessClaim");
+
+        res.status(200).json({ message: `Claim has been ${decision.toLowerCase()}d successfully.` });
+    } catch (error) {
+        console.error("Error processing claim:", error);
+        res.status(500).json({ error: "Server error while processing claim" });
+    }
+};
+
+

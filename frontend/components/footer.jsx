@@ -23,16 +23,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/lost" className="text-muted-foreground hover:text-foreground">
-                  Lost Items
-                </Link>
-              </li>
-              <li>
-                <Link href="/found" className="text-muted-foreground hover:text-foreground">
-                  Found Items
-                </Link>
-              </li>
-              <li>
                 <Link href="/post" className="text-muted-foreground hover:text-foreground">
                   Post Item
                 </Link>
