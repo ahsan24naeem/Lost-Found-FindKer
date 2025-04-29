@@ -26,17 +26,7 @@ export const verifyToken = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     req.user = decoded
     
-    // Refresh cookie expiration on successful auth
-    res.setHeader('Set-Cookie', 
-      cookie.serialize('auth', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-        path: '/'
-      })
-    )
-    
+    // Don't refresh the cookie - let it expire when the browser is closed
     next()
   } catch (error) {
     console.error('Auth error:', error)

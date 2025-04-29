@@ -1,15 +1,16 @@
 ﻿-- =========================
 -- 📦 DATABASE CREATION
 -- =========================
-drop login lostfound
-CREATE LOGIN lostfound WITH PASSWORD = 'lostfound12345';
-CREATE USER lostfound FOR LOGIN lostfound;
-ALTER ROLE db_owner ADD MEMBER lostfound;
+--drop login lostfound
+--CREATE LOGIN lostfound WITH PASSWORD = 'lostfound12345';
+--CREATE USER lostfound FOR LOGIN lostfound;
+--ALTER ROLE db_owner ADD MEMBER lostfound;
 
 CREATE DATABASE projectDB;
 GO
 USE projectDB;
 GO
+
 
 -- =========================
 -- 📄 TABLES
@@ -24,8 +25,7 @@ CREATE TABLE Users (
     PasswordHash NVARCHAR(255),
     PhoneNumber NVARCHAR(11) CHECK (LEN(PhoneNumber) = 11),
     UserRole NVARCHAR(50) CHECK (UserRole IN ('User', 'Admin')) DEFAULT 'User',
-    ProfilePic NVARCHAR(MAX) NOT NULL DEFAULT 'https://www.google.com/imgres?q=wolf&imgurl=https%3A%2F%2Fanimalfactguide.com%2Fwp-content%2Fuploads%2F2024%2F01%2Fgray-wolf-2.jpg&imgrefurl=https%3A%2F%2Fanimalfactguide.com%2Fanimal-facts%2Fgray-wolf%2F&docid=17M4gx2EFuvlXM&tbnid=RCaegHjO0ylwQM&vet=12ahUKEwin6dv-gPiMAxWMRqQEHd2rDAIQM3oECF4QAA..i&w=1000&h=710&hcb=2&ved=2ahUKEwin6dv-gPiMAxWMRqQEHd2rDAIQM3oECF4QAA',
-
+    ProfilePic NVARCHAR(MAX),
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
@@ -38,29 +38,25 @@ CREATE TABLE Categories (
 -- ITEMS (POSTS)
 CREATE TABLE Items (
     ItemID INT IDENTITY(1,1) PRIMARY KEY,
-    UserID INT FOREIGN KEY REFERENCES Users(UserID),
+    UserID INT FOREIGN KEY REFERENCES Users(UserID) ON DELETE CASCADE,
     Title NVARCHAR(255) NOT NULL,
     ItemDescription NVARCHAR(MAX),
     CategoryID INT FOREIGN KEY REFERENCES Categories(CategoryID),
-    ItemStatus NVARCHAR(50) CHECK (ItemStatus IN ('Lost', 'Found', 'Claimed')) NOT NULL,
+    ItemStatus NVARCHAR(50) CHECK (ItemStatus IN ('Lost', 'Found', 'Retrieved')) NOT NULL,
     ItemLocation NVARCHAR(255) NOT NULL,
     DateReported DATETIME DEFAULT GETDATE(),
     ImageURL NVARCHAR(255),
-	   QRCode NVARCHAR(255) UNIQUE,
-    PrivateDetails NVARCHAR(255),
-    IsFlagged INT DEFAULT 0,
-    ClaimedBy INT NULL FOREIGN KEY REFERENCES Users(UserID)
+	ClaimedBY INT NULL
 );
 
 -- CLAIMS
 CREATE TABLE Claims (
     ClaimID INT IDENTITY(1,1) PRIMARY KEY,
     ItemID INT NOT NULL FOREIGN KEY REFERENCES Items(ItemID) ON DELETE CASCADE,
-    UserID INT NOT NULL FOREIGN KEY REFERENCES Users(UserID),
+    UserID INT NOT NULL FOREIGN KEY REFERENCES Users(UserID), 
     ClaimDetails NVARCHAR(255) NOT NULL,
     ClaimsStatus NVARCHAR(50) CHECK (ClaimsStatus IN ('Pending', 'Approved', 'Rejected')) DEFAULT 'Pending',
-    CreatedAt DATETIME DEFAULT GETDATE(),
-    AdminReviewedBy INT NULL FOREIGN KEY REFERENCES Users(UserID)
+    CreatedAt DATETIME DEFAULT GETDATE()
 );
 
 -- NOTIFICATIONS
@@ -69,7 +65,6 @@ CREATE TABLE Notifications (
     UserID INT FOREIGN KEY REFERENCES Users(UserID),
     ItemID INT NULL FOREIGN KEY REFERENCES Items(ItemID) ON DELETE SET NULL,
     Message NVARCHAR(255) NOT NULL,
-    IsRead BIT DEFAULT 0,
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
@@ -78,7 +73,7 @@ CREATE TABLE Flags (
     FlagID INT IDENTITY(1,1) PRIMARY KEY,
     ItemID INT FOREIGN KEY REFERENCES Items(ItemID) ON DELETE CASCADE,
     ReportedBy INT NOT NULL FOREIGN KEY REFERENCES Users(UserID),
-    Reason NVARCHAR(255) NOT NULL,
+    --Reason NVARCHAR(255) NOT NULL,
     Status NVARCHAR(50) CHECK (Status IN ('Pending', 'Reviewed', 'Dismissed')) DEFAULT 'Pending',
     CreatedAt DATETIME DEFAULT GETDATE()
 );
@@ -93,23 +88,6 @@ CREATE TABLE CommunityVerification (
     CONSTRAINT claim_user_unique UNIQUE(ClaimID, UserID)
 );
 
--- LOCATIONS (MAP COORDINATES)
-CREATE TABLE Locations (
-    LocationID INT IDENTITY(1,1) PRIMARY KEY,
-    ItemID INT FOREIGN KEY REFERENCES Items(ItemID) ON DELETE CASCADE,
-    Latitude DECIMAL(9,6),
-    Longitude DECIMAL(9,6)
-);
-
--- COMMENTS
-CREATE TABLE Comments (
-    CommentID INT IDENTITY(1,1) PRIMARY KEY,
-    PostID INT FOREIGN KEY REFERENCES Items(ItemID),
-    UserID INT FOREIGN KEY REFERENCES Users(UserID),
-    CommentText NVARCHAR(MAX) NOT NULL,
-    CreatedAt DATETIME DEFAULT GETDATE(),
-    IsFlagged BIT DEFAULT 0
-);
 
 -- MESSAGES
 CREATE TABLE Messages (
@@ -118,11 +96,10 @@ CREATE TABLE Messages (
     ReceiverID INT FOREIGN KEY REFERENCES Users(UserID),
     PostID INT FOREIGN KEY REFERENCES Items(ItemID),
     MessageText NVARCHAR(MAX) NOT NULL,
-    IsRead BIT DEFAULT 0,
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
-
+--?????????????????????//
 GO 
 CREATE OR ALTER PROCEDURE AdminProcessClaim
     @ClaimID INT,
@@ -240,25 +217,36 @@ BEGIN
     END CATCH
 END;
 
+
+
+-- =========================
+-- 🗂️ CATEGORIES
+-- =========================
+INSERT INTO Categories (CategoryName)
+VALUES
+('Electronics'),
+('Stationery'),
+('Accessories'),
+('Valueables'),
+('Personal Items'),
+('Sports Equipment'),
+('Others');
+
+
 -- =========================
 -- 👁️ VIEWS
 -- =========================
 
 GO
--- View: Other Users Profile
-CREATE VIEW otherUsersProfile AS
-SELECT UserID, FullName, Gender, Email, PhoneNumber, CreatedAt
-FROM Users;
-
-GO
--- View: All Posts
+-- View: All PostsCREATE VIEW AllPosts AS
 CREATE VIEW AllPosts AS
-SELECT i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
-       i.ItemLocation, i.DateReported, i.ImageURL, u.FullName AS PostedBy
+SELECT TOP 100 PERCENT
+    i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
+    i.ItemLocation, i.DateReported, i.ImageURL, u.FullName AS PostedBy, u.UserID
 FROM Items i
 JOIN Users u ON i.UserID = u.UserID
-LEFT JOIN Categories c ON i.CategoryID = c.CategoryID;
-
+LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
+ORDER BY i.DateReported DESC;
 
 
 
@@ -267,29 +255,10 @@ GO
 CREATE VIEW RecentPosts AS
 SELECT * FROM AllPosts WHERE DateReported >= DATEADD(DAY, -1, GETDATE());
 
-GO
--- View: Claims on Posts
-CREATE VIEW ClaimsOnPosts AS
-SELECT c.ClaimID, c.ItemID, u.FullName AS ClaimedBy, c.ClaimDetails, 
-       c.ClaimsStatus, c.CreatedAt, a.FullName AS ReviewedBy
-FROM Claims c
-JOIN Users u ON c.UserID = u.UserID
-LEFT JOIN Users a ON c.AdminReviewedBy = a.UserID;
 
 -- =========================
 -- ⚙️ STORED PROCEDURES
 -- =========================
-
-
-GO 
-CREATE OR ALTER PROCEDURE GetQR
-    @ItemID INT
-	AS
-BEGIN
-SELECT    QRCode FROM Items
-WHERE @ItemID = ItemID;
-END;
-
 
 -- 🔹 User Management
 GO
@@ -328,21 +297,7 @@ BEGIN
     WHERE c.UserID = @UserID;
 END;
 
-GO
-CREATE OR ALTER PROCEDURE InsertUser
-    @FullName NVARCHAR(255),
-    @Gender CHAR(1),
-    @Email NVARCHAR(255),
-    @PasswordHash NVARCHAR(255),
-    @PhoneNumber NVARCHAR(11),
-    @OAuthProvider NVARCHAR(50) = NULL,
-    @OAuthID NVARCHAR(255) = NULL
-AS
-BEGIN
-    INSERT INTO Users (FullName, Gender, Email, PasswordHash, PhoneNumber, UserRole)
-    VALUES (@FullName, @Gender, @Email, @PasswordHash, @PhoneNumber,   'User');
-END;
-
+-- ?????????????????????
 GO
 CREATE OR ALTER PROCEDURE UpdateUserProfile
     @UserID INT,
@@ -398,22 +353,16 @@ CREATE OR ALTER PROCEDURE CreatePost
     @CategoryID INT,
     @ItemStatus NVARCHAR(50),
     @ItemLocation NVARCHAR(255),
-    @ImageURL NVARCHAR(255),
-    @PrivateDetails NVARCHAR(255)
+    @ImageURL NVARCHAR(255)
 AS
 BEGIN
     DECLARE @NewItemID INT;
     
     -- Insert new item
-    INSERT INTO Items (UserID, Title, ItemDescription, CategoryID, ItemStatus, ItemLocation, ImageURL, PrivateDetails)
-    VALUES (@UserID, @Title, @ItemDescription, @CategoryID, @ItemStatus, @ItemLocation, @ImageURL, @PrivateDetails);
+    INSERT INTO Items (UserID, Title, ItemDescription, CategoryID, ItemStatus, ItemLocation, ImageURL)
+    VALUES (@UserID, @Title, @ItemDescription, @CategoryID, @ItemStatus, @ItemLocation, @ImageURL);
 
-    -- Get the newly inserted ItemID
-    SET @NewItemID = SCOPE_IDENTITY();
-
-    -- Call notification procedure
-    EXEC AddPostNotification @NewItemID, @UserID;
-END;
+    END;
 
 GO
 CREATE OR ALTER PROCEDURE DeletePost
@@ -431,69 +380,9 @@ BEGIN
     SELECT * FROM AllPosts WHERE CategoryName = @CategoryName ORDER BY DateReported DESC;
 END;
 
-GO
-CREATE OR ALTER PROCEDURE GetPostComments
-    @PostID INT
-AS
-BEGIN
-    SELECT c.CommentID, u.FullName AS CommentedBy, c.CommentText, c.CreatedAt
-    FROM Comments c
-    JOIN Users u ON c.UserID = u.UserID
-    WHERE c.PostID = @PostID
-    ORDER BY c.CreatedAt DESC;
-END;
 
 GO
-GO
-CREATE OR ALTER PROCEDURE SP_GetItemsByFilters
-    @Type NVARCHAR(10) = NULL,          -- 'lost' or 'found'
-    @Status NVARCHAR(20) = NULL,        -- e.g. 'available', 'claimed'
-    @RadiusKm FLOAT = NULL,             -- optional radius in km
-    @Latitude FLOAT = NULL,             -- required if RadiusKm is provided
-    @Longitude FLOAT = NULL             -- required if RadiusKm is provided
-AS
-BEGIN
-    SELECT 
-        i.ItemID,
-        i.Title,
-        i.ItemDescription AS description,
-        i.ItemStatus AS type,
-        l.Latitude,
-        l.Longitude,
-        u.FullName AS owner_name,
-        u.Email,
-        -- Only calculate distance if radius filter is used
-        CASE 
-            WHEN @RadiusKm IS NOT NULL THEN
-                (6371 * ACOS(
-                    COS(RADIANS(@Latitude)) 
-                    * COS(RADIANS(l.Latitude)) 
-                    * COS(RADIANS(l.Longitude) - RADIANS(@Longitude)) 
-                    + SIN(RADIANS(@Latitude)) 
-                    * SIN(RADIANS(l.Latitude))
-                ))
-            ELSE NULL
-        END AS distance_km
-    FROM Items i
-    JOIN Users u ON i.UserID = u.UserID
-    LEFT JOIN Locations l ON i.ItemID = l.ItemID
-    WHERE
-        (@Type IS NULL OR i.ItemStatus = @Type)             -- Filter by item type (lost/found)
-        AND (@Status IS NULL OR i.ItemStatus = @Status)   -- Filter by item status
-        AND (
-            @RadiusKm IS NULL 
-            OR (6371 * ACOS(
-                COS(RADIANS(@Latitude)) 
-                * COS(RADIANS(l.Latitude)) 
-                * COS(RADIANS(l.Longitude) - RADIANS(@Longitude)) 
-                + SIN(RADIANS(@Latitude)) 
-                * SIN(RADIANS(l.Latitude))
-              )) <= @RadiusKm
-        );
-END;
-
-GO
--- 🔹 Claims & Verification
+-- 🔹 Claims & Verification  ???????????????????///
 CREATE OR ALTER PROCEDURE ClaimItem
     @ItemID INT,
     @UserID INT,
@@ -609,57 +498,6 @@ BEGIN
     END
 END;
 
-GO
-CREATE OR ALTER PROCEDURE SP_GetClaimsByItemId
-    @ItemID INT,
-    @Type NVARCHAR(10) = NULL,         -- 'lost' or 'found'
-    @Status NVARCHAR(20) = NULL,       -- 'claimed', 'unclaimed', etc.
-    @RadiusKm FLOAT = NULL,            -- optional radius in km
-    @Latitude FLOAT = NULL,            -- required if RadiusKm is provided
-    @Longitude FLOAT = NULL            -- required if RadiusKm is provided
-AS
-BEGIN
-    SELECT 
-        c.ClaimID,
-        c.ItemID,
-        c.UserID,
-        c.ClaimsStatus AS status,
-        c.CreatedAt AS claimed_at,
-        i.ItemStatus AS type,
-        l.Latitude,
-        l.Longitude,
-        u.FullName AS claimer_name,
-        u.Email,
-        -- Only calculated if radius filter used
-        CASE 
-            WHEN @RadiusKm IS NOT NULL THEN
-                (6371 * ACOS(
-                    COS(RADIANS(@Latitude)) 
-                    * COS(RADIANS(l.Latitude)) 
-                    * COS(RADIANS(l.Longitude) - RADIANS(@Longitude)) 
-                    + SIN(RADIANS(@Latitude)) 
-                    * SIN(RADIANS(l.Latitude))
-                ))
-            ELSE NULL
-        END AS distance_km
-    FROM Claims c
-    JOIN Items i ON c.ItemID = i.ItemID
-    JOIN Users u ON c.UserID = u.UserID
-    LEFT JOIN Locations l ON i.ItemID = l.ItemID
-    WHERE c.ItemID = @ItemID
-      AND (@Type IS NULL OR i.ItemStatus = @Type)
-      AND (@Status IS NULL OR c.ClaimsStatus = @Status)
-      AND (
-          @RadiusKm IS NULL 
-          OR (6371 * ACOS(
-                COS(RADIANS(@Latitude)) 
-                * COS(RADIANS(l.Latitude)) 
-                * COS(RADIANS(l.Longitude) - RADIANS(@Longitude)) 
-                + SIN(RADIANS(@Latitude)) 
-                * SIN(RADIANS(l.Latitude))
-              )) <= @RadiusKm
-      );
-END;
 
 -- 🔹 Messaging & Notifications
 GO
@@ -695,69 +533,12 @@ CREATE OR ALTER PROCEDURE GetUserNotifications
     @UserID INT
 AS
 BEGIN
-    SELECT NotificationID, Message, IsRead, CreatedAt
+    SELECT NotificationID, Message, CreatedAt
     FROM Notifications
     WHERE UserID = @UserID
     ORDER BY CreatedAt DESC;
 END;
 
-GO
-CREATE OR ALTER PROCEDURE AddPostNotification
-    @ItemID INT,
-    @UserID INT
-AS
-BEGIN
-    -- Insert notification for all users except the one who posted
-    INSERT INTO Notifications (UserID, ItemID, Message)
-    SELECT U.UserID, @ItemID, CONCAT('A new item "', I.Title, '" has been posted.')
-    FROM Users U
-    CROSS JOIN Items I
-    WHERE U.UserID <> @UserID AND I.ItemID = @ItemID;
-END;
-
-
-
-GO 
-CREATE OR ALTER PROCEDURE UpdateItem
-    @ItemID INT,
-    @UserID INT,  -- For authorization
-    @Title NVARCHAR(255) = NULL,
-    @ItemDescription NVARCHAR(MAX) = NULL,
-    @CategoryID INT = NULL,
-    @ItemLocation NVARCHAR(255) = NULL,
-    @ImageURL NVARCHAR(255) = NULL,
-    @PrivateDetails NVARCHAR(255) = NULL
-AS
-BEGIN
-    -- Check if user owns the item or is admin
-    IF NOT EXISTS (
-        SELECT 1 FROM Items i
-        JOIN Users u ON i.UserID = u.UserID
-        WHERE i.ItemID = @ItemID AND (i.UserID = @UserID OR u.UserRole = 'Admin')
-    )
-    BEGIN
-        RAISERROR('You are not authorized to update this item.', 16, 1);
-        RETURN;
-    END
-    
-    -- Check if item is already claimed
-    IF EXISTS (SELECT 1 FROM Items WHERE ItemID = @ItemID AND ItemStatus = 'Claimed')
-    BEGIN
-        RAISERROR('Cannot update a claimed item.', 16, 1);
-        RETURN;
-    END
-    
-    -- Update the item
-    UPDATE Items
-    SET 
-        Title = ISNULL(@Title, Title),
-        ItemDescription = ISNULL(@ItemDescription, ItemDescription),
-        CategoryID = ISNULL(@CategoryID, CategoryID),
-        ItemLocation = ISNULL(@ItemLocation, ItemLocation),
-        ImageURL = ISNULL(@ImageURL, ImageURL),
-        PrivateDetails = ISNULL(@PrivateDetails, PrivateDetails)
-    WHERE ItemID = @ItemID;
-END;
 
 -- =========================
 -- 🔄 TRIGGERS
@@ -776,9 +557,6 @@ BEGIN
     -- Delete Notifications
     DELETE FROM Notifications WHERE UserID IN (SELECT UserID FROM DELETED);
 
-    -- Delete Comments
-    DELETE FROM Comments WHERE UserID IN (SELECT UserID FROM DELETED);
-
     -- Delete Claims
     DELETE FROM Claims WHERE UserID IN (SELECT UserID FROM DELETED);
 
@@ -788,12 +566,11 @@ BEGIN
     -- Delete Flags
     DELETE FROM Flags WHERE ReportedBy IN (SELECT UserID FROM DELETED);
 
-	--
-	    DELETE FROM Item WHERE UserID IN (SELECT UserID FROM DELETED);
-
     -- Finally delete user
     DELETE FROM Users WHERE UserID IN (SELECT UserID FROM DELETED);
 END;
+
+
 
 GO
 CREATE TRIGGER trg_Items_Delete_All
@@ -803,9 +580,6 @@ AS
 BEGIN
     -- Delete Messages
     DELETE FROM Messages WHERE PostID IN (SELECT ItemID FROM DELETED);
-
-    -- Delete Comments
-    DELETE FROM Comments WHERE PostID IN (SELECT ItemID FROM DELETED);
 
     -- Delete Claims
     DELETE FROM Claims WHERE ItemID IN (SELECT ItemID FROM DELETED);
@@ -833,11 +607,8 @@ BEGIN
         RETURN;
     END
 
-    -- 2. Delete community verifications for claiming user
-    DELETE cv
-    FROM CommunityVerification cv
-    JOIN inserted i ON cv.UserID = i.UserID;
 END;
+
 
 GO
 -- Validate that ReportedBy user exists
@@ -857,3 +628,18 @@ BEGIN
         ROLLBACK TRANSACTION;
     END
 END;
+
+
+GO
+
+CREATE TRIGGER trg_Notifications_CleanupOld
+ON Notifications
+AFTER INSERT
+AS
+BEGIN
+    -- Delete notifications older than 3 days for users who just received a new notification
+    DELETE FROM Notifications 
+    WHERE UserID IN (SELECT UserID FROM inserted)
+    AND DATEDIFF(DAY, CreatedAt, GETDATE()) >= 3;
+END;
+

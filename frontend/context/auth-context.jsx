@@ -12,27 +12,8 @@ export function AuthProvider({ children }) {
 
   // Check if user is logged in on initial load
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/user/verify', {
-          credentials: 'include', // Important for cookies
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error checking authentication:", error)
-        setUser(null);
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkAuth()
+    // Set loading to false immediately without checking auth
+    setLoading(false);
     
     // Clear user state when component unmounts
     return () => {
@@ -61,8 +42,11 @@ export function AuthProvider({ children }) {
         throw new Error(data.error || 'Login failed');
       }
       
+      // Set user state without persisting
       setUser(data.user);
-      router.push('/home'); // Redirect to home page after successful login
+      
+      // Redirect to home page
+      router.push('/home');
     } catch (error) {
       console.error('Login error:', error);
       throw error;

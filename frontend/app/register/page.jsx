@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function RegisterPage() {
@@ -157,7 +158,7 @@ export default function RegisterPage() {
                 <Input
                   id="signup-name"
                   name="name"
-                  placeholder="John Doe"
+                  placeholder="Ahmad Ali"
                   value={signupData.name}
                   onChange={handleSignupChange}
                   required
@@ -169,7 +170,7 @@ export default function RegisterPage() {
                   id="signup-email"
                   name="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="sample@lhr.nu.edu.pk"
                   value={signupData.email}
                   onChange={handleSignupChange}
                   required
@@ -181,7 +182,7 @@ export default function RegisterPage() {
                   id="signup-phone"
                   name="phoneNumber"
                   type="tel"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="03211234567"
                   value={signupData.phoneNumber}
                   onChange={handleSignupChange}
                   required
@@ -189,20 +190,24 @@ export default function RegisterPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-gender">Gender</Label>
-                <Select
+                <RadioGroup 
                   value={signupData.gender}
                   onValueChange={(value) => handleSignupChange({ target: { name: 'gender', value } })}
-                  required
+                  className="flex gap-4"
                 >
-                  <SelectTrigger id="signup-gender">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="M">Male</SelectItem>
-                    <SelectItem value="F">Female</SelectItem>
-                    <SelectItem value="O">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="M" id="gender-male" />
+                    <Label htmlFor="gender-male">Male</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="F" id="gender-female" />
+                    <Label htmlFor="gender-female">Female</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="O" id="gender-other" />
+                    <Label htmlFor="gender-other">Other</Label>
+                  </div>
+                </RadioGroup>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="signup-password">Password</Label>
