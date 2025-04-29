@@ -1,87 +1,34 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, Shield } from "lucide-react"
-import { useAuth } from "@/context/auth-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { CheckCircle, Search, UserX, FileX, Users, FileText, MessageCircle, X } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { CheckCircle, Search, UserX, FileX, Shield, Users, FileText, MessageCircle, X, Eye } from "lucide-react"
 import SidebarNav from "@/components/sidebar-nav"
 import MobileNav from "@/components/mobile-nav"
 import { formatDistanceToNow } from "date-fns"
 import AdminAccess from "./access"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/auth-context"
 
-export default function AdminPage() {
-  const { login } = useAuth()
+const ADMIN_CREDENTIALS = [
+  { username: "adminAhsan", password: "admin1", name: "Ahsan" },
+  { username: "adminAaiza", password: "admin2", name: "Aaiza" },
+  { username: "adminZoha", password: "admin3", name: "Zoha" },
+]
+
+export default function AdminDashboardPage() {
   const { toast } = useToast()
-  const router = useRouter()
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-
-  // Login form state
-  const [loginData, setLoginData] = useState({
-    email: "",
-    password: "",
-  })
-
-  const handleLoginChange = (e) => {
-    const { name, value } = e.target
-    setLoginData((prev) => ({ ...prev, [name]: value }))
-  }
-
-  const handleLoginSubmit = (e) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    // Basic validation
-    if (!loginData.email || !loginData.password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      })
-      setIsLoading(false)
-      return
-    }
-
-    // Check if the email is the admin email
-    if (loginData.email !== "admin@example.com") {
-      toast({
-        title: "Access Denied",
-        description: "Invalid admin credentials",
-        variant: "destructive",
-      })
-      setIsLoading(false)
-      return
-    }
-
-    // For demo purposes, we'll just log the user in as admin
-    setTimeout(() => {
-      login({
-        id: 999,
-        name: "Admin User",
-        email: "admin@example.com",
-        isAdmin: true,
-      })
-
-      toast({
-        title: "Success",
-        description: "You have been logged in as admin",
-      })
-
-      router.push("/admin/dashboard")
-      setIsLoading(false)
-    }, 1000) // Simulate network delay
-  }
   const [activeTab, setActiveTab] = useState("dashboard")
   const [searchTerm, setSearchTerm] = useState("")
+  const router = useRouter()
+  const { setUser } = useAuth()
 
   // Mock data for users
   const [users, setUsers] = useState([
@@ -276,6 +223,61 @@ export default function AdminPage() {
     },
   ])
 
+  // Mock data for claims
+  const [claims, setClaims] = useState([
+    {
+      id: 1,
+      text: "This is my iPhone. I can prove it by providing the serial number and unlock code.",
+      item: {
+        id: 1,
+        title: "iPhone 13 Pro",
+        type: "found",
+      },
+      user: {
+        name: "John Doe",
+        avatar: "/placeholder.svg?height=40&width=40",
+      },
+      date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+      status: "pending",
+      upvotes: 5,
+      downvotes: 1,
+    },
+    {
+      id: 2,
+      text: "I lost this necklace at the beach yesterday. It has my initials engraved on the back.",
+      item: {
+        id: 2,
+        title: "Gold Necklace",
+        type: "found",
+      },
+      user: {
+        name: "Sarah Williams",
+        avatar: "/placeholder.svg?height=40&width=40",
+      },
+      date: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+      status: "approved",
+      upvotes: 8,
+      downvotes: 0,
+    },
+    {
+      id: 3,
+      text: "These are my car keys. I can describe the keychain and what other keys are on it.",
+      item: {
+        id: 5,
+        title: "Car Keys with Red Keychain",
+        type: "found",
+      },
+      user: {
+        name: "Mike Johnson",
+        avatar: "/placeholder.svg?height=40&width=40",
+      },
+      date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+      status: "rejected",
+      upvotes: 2,
+      downvotes: 7,
+    },
+  ])
+
   // Stats for dashboard
   const stats = {
     totalUsers: users.length,
@@ -284,6 +286,7 @@ export default function AdminPage() {
     activePosts: posts.filter((post) => post.status === "Active").length,
     resolvedPosts: posts.filter((post) => post.status === "Resolved").length,
     pendingReports: reports.filter((report) => report.status === "Pending").length,
+    pendingClaims: claims.filter((claim) => claim.status === "pending").length,
   }
 
   const handleDeleteUser = (userId) => {
@@ -310,6 +313,31 @@ export default function AdminPage() {
     })
   }
 
+  const handleClaimAction = (claimId, action) => {
+    setClaims(
+      claims.map((claim) => {
+        if (claim.id === claimId) {
+          return {
+            ...claim,
+            status: action,
+          }
+        }
+        return claim
+      }),
+    )
+
+    const actionMessages = {
+      approved: "Claim has been approved",
+      rejected: "Claim has been rejected",
+      pending: "Claim has been reset to pending",
+    }
+
+    toast({
+      title: `Claim ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+      description: actionMessages[action],
+    })
+  }
+
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -322,6 +350,36 @@ export default function AdminPage() {
       post.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
       post.user.name.toLowerCase().includes(searchTerm.toLowerCase()),
   )
+
+  const filteredClaims = claims.filter(
+    (claim) =>
+      claim.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      claim.item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      claim.user.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
+
+  const handleLogin = (e) => {
+    e.preventDefault()
+    const found = ADMIN_CREDENTIALS.find(
+      (admin) => admin.username === form.username && admin.password === form.password
+    )
+    if (found) {
+      setUser({
+        name: found.name,
+        username: found.username,
+        role: "admin",
+        email: `${found.username}@admin.com`,
+      })
+      toast({ title: "Success", description: "Logged in as admin." })
+      router.push("/admin/dashboard")
+    } else {
+      toast({
+        title: "Login Failed",
+        description: "Invalid admin credentials.",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <AdminAccess>
@@ -359,7 +417,7 @@ export default function AdminPage() {
 
               {/* Dashboard Tab */}
               <TabsContent value="dashboard">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -387,6 +445,15 @@ export default function AdminPage() {
                     <CardContent>
                       <div className="text-2xl font-bold">{stats.pendingReports}</div>
                       <p className="text-xs text-muted-foreground">Requires attention</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Pending Claims</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{stats.pendingClaims}</div>
+                      <p className="text-xs text-muted-foreground">Awaiting verification</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -430,6 +497,78 @@ export default function AdminPage() {
                             </TableCell>
                           </TableRow>
                         ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+
+                <h2 className="mt-8 mb-4 text-xl font-semibold">Recent Claims</h2>
+                <Card>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Item</TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Votes</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {claims
+                          .sort((a, b) => new Date(b.date) - new Date(a.date))
+                          .slice(0, 3)
+                          .map((claim) => (
+                            <TableRow key={claim.id}>
+                              <TableCell>
+                                <Badge variant={claim.item.type === "lost" ? "destructive" : "default"}>
+                                  {claim.item.type}
+                                </Badge>
+                                <span className="ml-2">{claim.item.title}</span>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarImage src={claim.user.avatar || "/placeholder.svg"} alt={claim.user.name} />
+                                    <AvatarFallback>{claim.user.name.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-xs">{claim.user.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>{formatDistanceToNow(new Date(claim.date), { addSuffix: true })}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={
+                                    claim.status === "approved"
+                                      ? "success"
+                                      : claim.status === "rejected"
+                                        ? "destructive"
+                                        : "outline"
+                                  }
+                                >
+                                  {claim.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-green-600 text-xs">+{claim.upvotes}</span>
+                                  <span className="text-red-600 text-xs">-{claim.downvotes}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setActiveTab("claims")}
+                                  className="text-xs"
+                                >
+                                  View All
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
                       </TableBody>
                     </Table>
                   </CardContent>
@@ -604,60 +743,7 @@ export default function AdminPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {/* Mock claims data - in a real app, this would come from your database */}
-                        {[
-                          {
-                            id: 1,
-                            text: "This is my iPhone. I can prove it by providing the serial number and unlock code.",
-                            item: {
-                              id: 1,
-                              title: "iPhone 13 Pro",
-                              type: "found",
-                            },
-                            user: {
-                              name: "John Doe",
-                              avatar: "/placeholder.svg?height=40&width=40",
-                            },
-                            date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-                            status: "pending",
-                            upvotes: 5,
-                            downvotes: 1,
-                          },
-                          {
-                            id: 2,
-                            text: "I lost this necklace at the beach yesterday. It has my initials engraved on the back.",
-                            item: {
-                              id: 2,
-                              title: "Gold Necklace",
-                              type: "found",
-                            },
-                            user: {
-                              name: "Sarah Williams",
-                              avatar: "/placeholder.svg?height=40&width=40",
-                            },
-                            date: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-                            status: "approved",
-                            upvotes: 8,
-                            downvotes: 0,
-                          },
-                          {
-                            id: 3,
-                            text: "These are my car keys. I can describe the keychain and what other keys are on it.",
-                            item: {
-                              id: 5,
-                              title: "Car Keys with Red Keychain",
-                              type: "found",
-                            },
-                            user: {
-                              name: "Mike Johnson",
-                              avatar: "/placeholder.svg?height=40&width=40",
-                            },
-                            date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-                            status: "rejected",
-                            upvotes: 2,
-                            downvotes: 7,
-                          },
-                        ].map((claim) => (
+                        {filteredClaims.map((claim) => (
                           <TableRow key={claim.id}>
                             <TableCell className="max-w-[200px] truncate">{claim.text}</TableCell>
                             <TableCell>
@@ -703,12 +789,7 @@ export default function AdminPage() {
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8 text-green-600"
-                                    onClick={() => {
-                                      toast({
-                                        title: "Claim Approved",
-                                        description: "The claim has been approved",
-                                      })
-                                    }}
+                                    onClick={() => handleClaimAction(claim.id, "approved")}
                                   >
                                     <CheckCircle className="h-4 w-4" />
                                   </Button>
@@ -718,29 +799,21 @@ export default function AdminPage() {
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8 text-red-600"
-                                    onClick={() => {
-                                      toast({
-                                        title: "Claim Rejected",
-                                        description: "The claim has been rejected",
-                                      })
-                                    }}
+                                    onClick={() => handleClaimAction(claim.id, "rejected")}
                                   >
                                     <X className="h-4 w-4" />
                                   </Button>
                                 )}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => {
-                                    toast({
-                                      title: "View Details",
-                                      description: "Viewing claim details",
-                                    })
-                                  }}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
+                                {claim.status !== "pending" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => handleClaimAction(claim.id, "pending")}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>

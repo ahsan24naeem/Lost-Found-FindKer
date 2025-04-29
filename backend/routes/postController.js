@@ -131,3 +131,20 @@ export const searchPosts = async (req, res) => {
     }
 };
 
+export const markItemAsClaimed = async (req, res) => {
+    const { itemID, userID, claimedBy } = req.body;
+
+    try {
+        let pool = await sql.connect(dbConfig);
+        await pool.request()
+            .input("ItemID", sql.Int, itemID)
+            .input("UserID", sql.Int, userID)
+            .input("ClaimedBy", claimedBy !== undefined ? sql.Int : sql.Int, claimedBy ?? null)
+            .execute("MarkItemAsClaimed");
+
+        res.status(200).json({ message: "Item marked as retrieved." });
+    } catch (error) {
+        console.error("Error marking item as claimed:", error);
+        res.status(500).json({ error: "Server error while marking item as claimed" });
+    }
+};

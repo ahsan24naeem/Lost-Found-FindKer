@@ -18,7 +18,7 @@ export default function AdminAccess({ children }) {
     }
 
     // For demo purposes, we'll check if email is admin@example.com
-    if (user?.email === "admin@example.com") {
+    if (user?.role === "Admin") {
       setHasAccess(true)
     } else {
       router.push("/admin")

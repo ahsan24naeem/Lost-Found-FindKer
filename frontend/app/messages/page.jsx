@@ -33,7 +33,7 @@ export default function MessagesPage() {
 
   // Fetch all conversations for the current user
   useEffect(() => {
-    if (!user?.userid) return
+    if (!user?.id) return
     
     setLoading(true)
     const userId = Number(user.id)
@@ -45,28 +45,21 @@ export default function MessagesPage() {
       return
     }
     
-    console.log("Fetching conversations for user ID:", userId)
-    
     fetch(`http://localhost:5000/api/message/contacts/${userId}`)
       .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`)
-        }
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
         return res.json()
       })
       .then(data => {
-        console.log("Conversations data:", data)
-        // Ensure data is an array
         const conversationsData = Array.isArray(data) ? data : []
         setConversations(conversationsData)
-        setLoading(false)
       })
       .catch(err => {
         console.error("Error fetching conversations:", err)
         toast.error("Failed to load conversations")
-        setLoading(false)
         setConversations([])
       })
+      .finally(() => setLoading(false))
   }, [user])
 
   // Fetch messages for the selected conversation
@@ -84,38 +77,30 @@ export default function MessagesPage() {
       return
     }
     
-    console.log("Fetching messages for users:", { userId, chatId })
-    
     fetch(`http://localhost:5000/api/message/messagesBetweenUsers/${userId}/${chatId}`)
       .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`)
-        }
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
         return res.json()
       })
       .then(data => {
-        console.log("Messages data:", data)
-        // Transform the data to match the expected structure
         const transformedMessages = Array.isArray(data) ? data.map(msg => ({
           id: msg.MessageID,
-          // Determine if the current user is the sender or receiver
-          senderID: msg.Sender === user.name ? user.id : chatId,
-          receiverID: msg.Receiver === user.name ? chatId : user.id,
+          senderID: msg.SenderID,
+          senderName: msg.SenderName || `User ${msg.SenderID}`,
+          receiverID: msg.ReceiverID,
+          receiverName: msg.ReceiverName || `User ${msg.ReceiverID}`,
           messageText: msg.MessageText,
           timestamp: msg.CreatedAt,
-          // Add these fields to help with display
-          isCurrentUser: msg.Sender === user.name
+          isCurrentUser: Number(msg.SenderID) === Number(user.id)
         })) : []
-        console.log("Transformed messages:", transformedMessages)
         setMessages(transformedMessages)
-        setLoadingMessages(false)
       })
       .catch(err => {
         console.error("Error fetching messages:", err)
         toast.error("Failed to load messages")
         setMessages([])
-        setLoadingMessages(false)
       })
+      .finally(() => setLoadingMessages(false))
   }, [user, selectedChat])
 
   // Handle sending a message
@@ -143,30 +128,25 @@ export default function MessagesPage() {
         }),
       })
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
       
       setMessageText("")
       toast.success("Message sent")
       
       // Refresh messages
       const messagesResponse = await fetch(`http://localhost:5000/api/message/messagesBetweenUsers/${userId}/${chatId}`)
-      if (!messagesResponse.ok) {
-        throw new Error(`HTTP error! status: ${messagesResponse.status}`)
-      }
-      const messagesData = await messagesResponse.json()
+      if (!messagesResponse.ok) throw new Error(`HTTP error! status: ${messagesResponse.status}`)
       
-      // Transform the data to match the expected structure
-      const transformedMessages = Array.isArray(messagesData) ? messagesData.map(msg => ({
+      const messagesData = await messagesResponse.json()
+      const transformedMessages = Array.isArray(messagesData) ? data.map(msg => ({
         id: msg.MessageID,
-        // Determine if the current user is the sender or receiver
-        senderID: msg.Sender === user.name ? user.id : chatId,
-        receiverID: msg.Receiver === user.name ? chatId : user.id,
+        senderID: msg.SenderID,
+        senderName: msg.SenderName || `User ${msg.SenderID}`,
+        receiverID: msg.ReceiverID,
+        receiverName: msg.ReceiverName || `User ${msg.ReceiverID}`,
         messageText: msg.MessageText,
         timestamp: msg.CreatedAt,
-        // Add these fields to help with display
-        isCurrentUser: msg.Sender === user.name
+        isCurrentUser: Number(msg.SenderID) === Number(user.id)
       })) : []
       
       setMessages(transformedMessages)
@@ -179,18 +159,8 @@ export default function MessagesPage() {
   // Get the selected conversation with defensive checks
   const safeConversations = Array.isArray(conversations) ? conversations : []
   const activeConversation = safeConversations.find(
-    (conversation) => {
-      // Try different possible property paths
-      return (
-        conversation?.user?.id === selectedChat || 
-        conversation?.id === selectedChat ||
-        conversation?.userId === selectedChat
-      )
-    }
+    (conversation) => Number(conversation?.UserID) === Number(selectedChat)
   )
-  
-  console.log("Selected chat:", selectedChat)
-  console.log("Active conversation:", activeConversation)
 
   return (
     <div className="flex h-screen">
@@ -222,11 +192,10 @@ export default function MessagesPage() {
                 </div>
               ) : (
                 safeConversations.map((conversation) => {
-                  // Try different possible property paths for user data
-                  const userId = conversation?.user?.userid || conversation?.userid || conversation?.userId
-                  const userName = conversation?.user?.FullName || conversation?.FullName || "Unknown User"
-                  const userAvatar = conversation?.user?.avatar || conversation?.avatar || "/placeholder.svg"
-                  const isOnline = conversation?.user?.isOnline || conversation?.isOnline || false
+                  const userId = conversation?.UserID
+                  const userName = conversation?.FullName || "Unknown User"
+                  const userAvatar = conversation?.avatar || "/placeholder.svg"
+                  const isOnline = conversation?.isOnline || false
                   const lastMessage = conversation?.lastMessage || {}
                   const unreadCount = conversation?.unreadCount || 0
                   
@@ -277,15 +246,15 @@ export default function MessagesPage() {
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarImage
-                    src={activeConversation?.user?.avatar || "/placeholder.svg"}
-                    alt={activeConversation?.user?.name || "User"}
+                    src={activeConversation?.avatar || "/placeholder.svg"}
+                    alt={activeConversation?.FullName || "User"}
                   />
-                  <AvatarFallback>{activeConversation?.user?.name?.charAt(0) || "U"}</AvatarFallback>
+                  <AvatarFallback>{activeConversation?.FullName?.charAt(0) || "U"}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h2 className="font-medium">{activeConversation?.user?.name || "User"}</h2>
+                  <h2 className="font-medium">{activeConversation?.FullName || "User"}</h2>
                   <p className="text-xs text-muted-foreground">
-                    {activeConversation?.user?.isOnline ? "Online" : "Offline"}
+                    {activeConversation?.isOnline ? "Online" : "Offline"}
                   </p>
                 </div>
               </div>
@@ -313,32 +282,34 @@ export default function MessagesPage() {
                   </div>
                 ) : (
                   messages.map((message) => {
-                    // Use the isCurrentUser flag to determine message position
-                    const isCurrentUser = message.isCurrentUser || message.senderID === user?.id
-                    
+                    const isCurrentUser = message.isCurrentUser || Number(message.senderID) === Number(user?.id)
                     return (
                       <div
                         key={message.id}
                         className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
                       >
-                        {!isCurrentUser && (
-                          <Avatar className="mr-2 h-8 w-8">
-                            <AvatarImage
-                              src={activeConversation?.user?.avatar || "/placeholder.svg"}
-                              alt={activeConversation?.user?.name || "User"}
-                            />
-                            <AvatarFallback>{activeConversation?.user?.name?.charAt(0) || "U"}</AvatarFallback>
-                          </Avatar>
-                        )}
-                        <div
-                          className={`max-w-[70%] rounded-lg p-3 ${
-                            isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                          }`}
-                        >
-                          <p>{message.messageText}</p>
-                          <p className="mt-1 text-right text-xs opacity-70">
-                            {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
-                          </p>
+                        <div className={`flex max-w-[80%] gap-2 ${isCurrentUser ? "flex-row-reverse" : ""}`}>
+                          {!isCurrentUser && (
+                            <Avatar className="h-8 w-8 mt-1">
+                              <AvatarImage src={activeConversation?.avatar} />
+                              <AvatarFallback>{message.senderName?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                          )}
+                          <div className="flex flex-col">
+                            <span className={`text-xs text-muted-foreground mb-1 ${isCurrentUser ? "text-right" : ""}`}>
+                              {isCurrentUser ? "You" : message.senderName}
+                            </span>
+                            <div
+                              className={`rounded-lg p-3 ${
+                                isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                              }`}
+                            >
+                              <p>{message.messageText}</p>
+                              <p className={`mt-1 text-xs opacity-70 ${isCurrentUser ? "text-right" : "text-left"}`}>
+                                {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )

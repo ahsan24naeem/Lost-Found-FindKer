@@ -54,8 +54,12 @@ export function AuthProvider({ children }) {
         phoneNumber: data.user.phoneNumber
       });
       
-      // Redirect to home page
-      router.push('/home');
+      // Redirect based on role
+      if (data.user.role === "Admin") {
+        router.push("/admin");
+      } else {
+        router.push("/home");
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -94,7 +98,7 @@ export function AuthProvider({ children }) {
         gender: userData.gender,
         isAdmin: false,
         avatar: "/placeholder.svg?height=200&width=200",
-        joinDate: new Date().toISOString().split("T")[0],
+        joinDate: userData.creationDate,
       };
 
       setUser(user);

@@ -97,33 +97,12 @@ export default function ProfilePage() {
               <p className="mb-4">{userData.bio || ""}</p>
               <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                 <div className="flex items-center">
-                  <MapPin className="mr-2 h-4 w-4" />
-                  {userData.location || "-"}
-                </div>
-                <div className="flex items-center">
                   <Calendar className="mr-2 h-4 w-4" />
                   Joined {userData.joinDate ? new Date(userData.joinDate).toLocaleDateString() : "-"}
                 </div>
                 <div className="flex items-center">
                   <Mail className="mr-2 h-4 w-4" />
                   {userData.email || "-"}
-                </div>
-                <div className="flex items-center">
-                  <Phone className="mr-2 h-4 w-4" />
-                  {userData.phone || userData.phoneNumber || "-"}
-                </div>
-                <div className="flex items-center sm:col-span-2">
-                  <Globe className="mr-2 h-4 w-4" />
-                  {userData.website ? (
-                    <a
-                      href={`https://${userData.website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary"
-                    >
-                      {userData.website}
-                    </a>
-                  ) : "-"}
                 </div>
               </div>
             </div>

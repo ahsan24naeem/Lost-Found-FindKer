@@ -254,6 +254,17 @@ export default function FeedItemCard({ item }) {
   // Determine if the current user can update the item status
   const canUpdateStatus = user && (user.id === transformedItem.user.id || user.isAdmin)
 
+  // Determine if the current user can mark as claimed
+  const canMarkAsClaimed = (
+    itemStatus !== "claimed" &&
+    (
+      // If lost, only the posting user can mark as claimed
+      (transformedItem.type === "lost" && user && user.id === transformedItem.user.id) ||
+      // If found, admin or posting user can mark as claimed
+      (transformedItem.type === "found" && user && (user.role === "admin" || user.id === transformedItem.user.id))
+    )
+  );
+
   return (
     <>
       <Card className="w-full mb-4">
@@ -272,7 +283,6 @@ export default function FeedItemCard({ item }) {
                   <Badge variant={transformedItem.type === "lost" ? "destructive" : "default"} className="text-[10px]">
                     {transformedItem.type === "lost" ? "Lost" : "Found"}
                   </Badge>
-                  <StatusBadge status={itemStatus} />
                 </div>
               </div>
             </div>
@@ -293,7 +303,7 @@ export default function FeedItemCard({ item }) {
             </DropdownMenu>
           </div>
         </CardHeader>
-        <CardContent className="p-4 pt-0">
+        <CardContent className="p-4">
           <h3 className="mb-1 text-lg font-semibold">{transformedItem.title}</h3>
           <p className="mb-2 text-sm text-muted-foreground">{transformedItem.description}</p>
           <div className="mb-2 text-xs text-muted-foreground">
@@ -309,49 +319,23 @@ export default function FeedItemCard({ item }) {
               className="h-auto w-full"
             />
           </div>
-          <div className="mt-4 border-t pt-4">
-            <h4 className="text-sm font-medium mb-2">Item Status</h4>
-            <div className="flex gap-2">
-              <Badge variant={itemStatus === "found" ? "default" : "outline"} className="px-3 py-1">
-                {itemStatus === "found" ? "Found ✓" : "Found"}
-              </Badge>
-              <Badge variant={itemStatus === "lost" ? "destructive" : "outline"} className="px-3 py-1">
-                {itemStatus === "lost" ? "Lost ✓" : "Lost"}
-              </Badge>
-              <Badge variant={itemStatus === "claimed" ? "success" : "outline"} className="px-3 py-1">
-                {itemStatus === "claimed" ? "Claimed ✓" : "Claimed"}
-              </Badge>
+          {canMarkAsClaimed && (
+            <div className="mt-4">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setItemStatus("claimed");
+                  toast({
+                    title: "Item Status Updated",
+                    description: "This item has been marked as claimed",
+                  });
+                }}
+              >
+                Mark as Claimed
+              </Button>
             </div>
-            {canUpdateStatus && (
-              <div className="flex gap-2 mt-2">
-                {itemStatus !== "found" && (
-                  <Button size="sm" variant="outline" onClick={handleMarkAsFound}>
-                    Mark as Found
-                  </Button>
-                )}
-                {itemStatus !== "lost" && (
-                  <Button size="sm" variant="outline" onClick={handleMarkAsLost}>
-                    Mark as Lost
-                  </Button>
-                )}
-                {itemStatus !== "claimed" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setItemStatus("claimed")
-                      toast({
-                        title: "Item Status Updated",
-                        description: "This item has been marked as claimed",
-                      })
-                    }}
-                  >
-                    Mark as Claimed
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col p-0">
           <div className="flex items-center justify-between border-t p-2">

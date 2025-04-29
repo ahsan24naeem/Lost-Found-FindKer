@@ -6,7 +6,8 @@ import {
     getCategorizedPosts, 
     createPost, 
     deletePost,
-    searchPosts
+    searchPosts,
+    markItemAsClaimed
 } from "./postController.js";
 
 const router = express.Router();
@@ -14,6 +15,7 @@ const router = express.Router();
 // Public routes - can be viewed by anyone
 router.get("/all", getAllPosts);
 // Protected routes - require authentication
+router.post("/mark-as-claimed", markItemAsClaimed);
 router.post("/create", createPost);
 router.delete("/:itemID", deletePost);
 router.get("/recent", getRecentPosts);
