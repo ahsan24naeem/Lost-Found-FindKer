@@ -47,12 +47,12 @@ export default function SidebarNav({ className }) {
             onClick={handleProfileClick}
           >
             <Avatar>
-              <AvatarImage src="/placeholder.svg?height=40&width=40" alt={user.name} />
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src="/placeholder.svg?height=40&width=40" alt={user.name || 'User'} />
+              <AvatarFallback>{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
             </Avatar>
             <div>
-              <div className="font-medium">{user.name}</div>
-              <div className="text-xs text-muted-foreground">{user.email}</div>
+              <div className="font-medium">{user.name || 'User'}</div>
+              <div className="text-xs text-muted-foreground">{user.email || ''}</div>
             </div>
           </div>
         </div>

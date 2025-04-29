@@ -7,19 +7,18 @@ import {
     getPostComments, 
     createPost, 
     deletePost,
-    searchPosts  
+    searchPosts
 } from "./postController.js";
 
 const router = express.Router();
 
 // Public routes - can be viewed by anyone
-router.get("/all", optionalAuth, getAllPosts);
+router.get("/all", getAllPosts);
 // Protected routes - require authentication
-router.post("/create", verifyToken, createPost);
-router.delete("/:itemID", verifyToken, deletePost);
+router.post("/create", createPost);
+router.delete("/:itemID", deletePost);
 
 router.get("/recent", getRecentPosts);
-//router.get("/category", getCategories);
 router.get("/category/:categoryName", getCategorizedPosts);
 router.get("/:postID/comments", getPostComments);
 router.get("/search", searchPosts);

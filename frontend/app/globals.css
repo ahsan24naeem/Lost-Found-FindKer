@@ -86,3 +86,14 @@
     scrollbar-width: none;
   }
 }
+
+@layer components {
+  /* Make the Select dropdown menu background fully opaque */
+  .select-dropdown-opaque,
+  .select-dropdown-opaque[data-state="open"],
+  .select-dropdown-opaque[data-state="closed"] {
+    background-color: hsl(var(--popover) / 1) !important;
+    /* fallback for browsers that don't support alpha in hsl() */
+    background-color: #fff !important;
+  }
+}

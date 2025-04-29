@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { Search, Edit, Phone, Video, Info, Send, ImageIcon, Paperclip, Smile } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -10,165 +10,52 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import MobileNav from "@/components/mobile-nav"
 import SidebarNav from "@/components/sidebar-nav"
+import { useAuth } from "@/context/auth-context"
 
 export default function MessagesPage() {
+  const { user } = useAuth()
   const [selectedChat, setSelectedChat] = useState(null)
   const [messageText, setMessageText] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
+  const [conversations, setConversations] = useState([])
+  const [messages, setMessages] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [loadingMessages, setLoadingMessages] = useState(false)
 
-  // Mock conversations data
-  const conversations = [
-    {
-      id: 1,
-      user: {
-        name: "Sarah Williams",
-        avatar: "/placeholder.svg?height=40&width=40",
-        isOnline: true,
-      },
-      lastMessage: {
-        text: "I found your wallet! It was near the bench at Central Park.",
-        timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
-        isRead: false,
-        sender: "them",
-      },
-      unreadCount: 2,
-    },
-    {
-      id: 2,
-      user: {
-        name: "David Brown",
-        avatar: "/placeholder.svg?height=40&width=40",
-        isOnline: false,
-      },
-      lastMessage: {
-        text: "Thanks for returning my phone! Really appreciate it.",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1 hour ago
-        isRead: true,
-        sender: "them",
-      },
-      unreadCount: 0,
-    },
-    {
-      id: 3,
-      user: {
-        name: "Emily Davis",
-        avatar: "/placeholder.svg?height=40&width=40",
-        isOnline: true,
-      },
-      lastMessage: {
-        text: "Is the gold necklace still available?",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
-        isRead: true,
-        sender: "them",
-      },
-      unreadCount: 0,
-    },
-    {
-      id: 4,
-      user: {
-        name: "Mike Johnson",
-        avatar: "/placeholder.svg?height=40&width=40",
-        isOnline: false,
-      },
-      lastMessage: {
-        text: "I'll be at the coffee shop at 3 PM to pick up my keys.",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-        isRead: true,
-        sender: "you",
-      },
-      unreadCount: 0,
-    },
-    {
-      id: 5,
-      user: {
-        name: "Jessica Taylor",
-        avatar: "/placeholder.svg?height=40&width=40",
-        isOnline: false,
-      },
-      lastMessage: {
-        text: "Can you describe the backpack in more detail?",
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days ago
-        isRead: true,
-        sender: "you",
-      },
-      unreadCount: 0,
-    },
-  ]
+  // Fetch all conversations for the current user
+  useEffect(() => {
+    if (!user?.id) return
+    setLoading(true)
+    // For now, fetch all users the current user has messaged or been messaged by
+    // This assumes a backend endpoint /api/message/conversations/:userID exists
+    // If not, you may need to fetch all users or all messages and build the list
+    fetch(`http://localhost:5000/api/message/conversations/${user.id}`)
+      .then(res => res.json())
+      .then(data => {
+        setConversations(data)
+        setLoading(false)
+      })
+      .catch(err => {
+        setLoading(false)
+        setConversations([])
+      })
+  }, [user])
 
-  // Mock messages for the selected conversation
-  const getMessages = (conversationId) => {
-    if (conversationId === 1) {
-      return [
-        {
-          id: 1,
-          text: "Hi there! I saw your post about a lost wallet.",
-          timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), // 1 hour ago
-          sender: "them",
-        },
-        {
-          id: 2,
-          text: "Yes, I lost my black leather wallet yesterday at Central Park. Have you found it?",
-          timestamp: new Date(Date.now() - 1000 * 60 * 59).toISOString(), // 59 minutes ago
-          sender: "you",
-        },
-        {
-          id: 3,
-          text: "I think I did! Does it have the initials 'JD' on it?",
-          timestamp: new Date(Date.now() - 1000 * 60 * 55).toISOString(), // 55 minutes ago
-          sender: "them",
-        },
-        {
-          id: 4,
-          text: "Yes, that's mine! It also has my driver's license and two credit cards inside.",
-          timestamp: new Date(Date.now() - 1000 * 60 * 50).toISOString(), // 50 minutes ago
-          sender: "you",
-        },
-        {
-          id: 5,
-          text: "Great! I found it near the fountain. Everything is still inside.",
-          timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 minutes ago
-          sender: "them",
-        },
-        {
-          id: 6,
-          text: "Thank you so much! Can we meet somewhere so I can pick it up?",
-          timestamp: new Date(Date.now() - 1000 * 60 * 40).toISOString(), // 40 minutes ago
-          sender: "you",
-        },
-        {
-          id: 7,
-          text: "How about the coffee shop on Main Street tomorrow at 2 PM?",
-          timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString(), // 35 minutes ago
-          sender: "them",
-        },
-        {
-          id: 8,
-          text: "That works perfectly for me. Thank you again for your honesty!",
-          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-          sender: "you",
-        },
-        {
-          id: 9,
-          text: "No problem at all. I'll be wearing a red jacket so you can recognize me.",
-          timestamp: new Date(Date.now() - 1000 * 60 * 25).toISOString(), // 25 minutes ago
-          sender: "them",
-        },
-        {
-          id: 10,
-          text: "Perfect! I'll see you tomorrow at 2 PM.",
-          timestamp: new Date(Date.now() - 1000 * 60 * 20).toISOString(), // 20 minutes ago
-          sender: "you",
-        },
-        {
-          id: 11,
-          text: "I found your wallet! It was near the bench at Central Park.",
-          timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
-          sender: "them",
-        },
-      ]
-    }
-    return []
-  }
+  // Fetch messages for the selected conversation
+  useEffect(() => {
+    if (!user?.id || !selectedChat) return
+    setLoadingMessages(true)
+    fetch(`http://localhost:5000/api/message/messages/${user.id}/${selectedChat}`)
+      .then(res => res.json())
+      .then(data => {
+        setMessages(data)
+        setLoadingMessages(false)
+      })
+      .catch(err => {
+        setMessages([])
+        setLoadingMessages(false)
+      })
+  }, [user, selectedChat])
 
   // Filter conversations based on search query
   const filteredConversations = conversations.filter((conversation) =>
@@ -176,17 +63,31 @@ export default function MessagesPage() {
   )
 
   // Handle sending a message
-  const handleSendMessage = () => {
-    if (!messageText.trim() || !selectedChat) return
-
-    // This would be handled by your state management and API
-    console.log("Sending message:", messageText, "to conversation:", selectedChat)
-    setMessageText("")
+  const handleSendMessage = async () => {
+    if (!messageText.trim() || !selectedChat || !user?.id) return
+    try {
+      await fetch("http://localhost:5000/api/message/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          senderID: user.id,
+          receiverID: selectedChat,
+          postID: null, // or pass a postID if needed
+          messageText,
+        }),
+      })
+      setMessageText("")
+      // Refresh messages
+      fetch(`http://localhost:5000/api/message/messages/${user.id}/${selectedChat}`)
+        .then(res => res.json())
+        .then(data => setMessages(data))
+    } catch (err) {
+      // handle error
+    }
   }
 
   // Get the selected conversation
-  const activeConversation = conversations.find((conversation) => conversation.id === selectedChat)
-  const messages = selectedChat ? getMessages(selectedChat) : []
+  const activeConversation = conversations.find((conversation) => conversation.user.id === selectedChat)
 
   return (
     <div className="flex h-screen">
@@ -219,13 +120,15 @@ export default function MessagesPage() {
 
           <ScrollArea className="h-[calc(100vh-8rem)]">
             <div className="space-y-1 p-2">
-              {filteredConversations.map((conversation) => (
+              {loading ? (
+                <div>Loading...</div>
+              ) : filteredConversations.map((conversation) => (
                 <button
-                  key={conversation.id}
+                  key={conversation.user.id}
                   className={`flex w-full items-start gap-3 rounded-lg p-3 text-left hover:bg-muted ${
-                    selectedChat === conversation.id ? "bg-muted" : ""
+                    selectedChat === conversation.user.id ? "bg-muted" : ""
                   }`}
-                  onClick={() => setSelectedChat(conversation.id)}
+                  onClick={() => setSelectedChat(conversation.user.id)}
                 >
                   <div className="relative">
                     <Avatar>
@@ -240,12 +143,14 @@ export default function MessagesPage() {
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium">{conversation.user.name}</h3>
                       <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(conversation.lastMessage.timestamp), { addSuffix: false })}
+                        {/* Show last message time if available */}
+                        {conversation.lastMessage && conversation.lastMessage.timestamp &&
+                          formatDistanceToNow(new Date(conversation.lastMessage.timestamp), { addSuffix: false })}
                       </span>
                     </div>
                     <p className="truncate text-sm text-muted-foreground">
-                      {conversation.lastMessage.sender === "you" ? "You: " : ""}
-                      {conversation.lastMessage.text}
+                      {conversation.lastMessage && conversation.lastMessage.sender === user.id ? "You: " : ""}
+                      {conversation.lastMessage && conversation.lastMessage.text}
                     </p>
                     {conversation.unreadCount > 0 && <Badge className="mt-1">{conversation.unreadCount}</Badge>}
                   </div>
@@ -291,12 +196,14 @@ export default function MessagesPage() {
             {/* Messages */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
-                {messages.map((message) => (
+                {loadingMessages ? (
+                  <div>Loading messages...</div>
+                ) : messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${message.sender === "you" ? "justify-end" : "justify-start"}`}
+                    className={`flex ${message.senderID === user.id ? "justify-end" : "justify-start"}`}
                   >
-                    {message.sender === "them" && (
+                    {message.senderID !== user.id && (
                       <Avatar className="mr-2 h-8 w-8">
                         <AvatarImage
                           src={activeConversation?.user.avatar || "/placeholder.svg"}
@@ -307,10 +214,10 @@ export default function MessagesPage() {
                     )}
                     <div
                       className={`max-w-[70%] rounded-lg p-3 ${
-                        message.sender === "you" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                        message.senderID === user.id ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
                       }`}
                     >
-                      <p>{message.text}</p>
+                      <p>{message.messageText}</p>
                       <p className="mt-1 text-right text-xs opacity-70">
                         {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
                       </p>

@@ -26,23 +26,7 @@ export function middleware(request) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // Verify token with backend
-  try {
-    const response = fetch("http://localhost:5000/api/user/verify", {
-      headers: {
-        Cookie: `auth=${authCookie.value}`,
-      },
-      credentials: "include",
-    })
-
-    if (!response.ok) {
-      return NextResponse.redirect(new URL("/login", request.url))
-    }
-  } catch (error) {
-    console.error("Auth verification failed:", error)
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
-
+  // Don't verify token with backend - just check if cookie exists
   return NextResponse.next()
 }
 

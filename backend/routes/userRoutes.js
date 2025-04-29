@@ -19,12 +19,12 @@ const router = express.Router();
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logout);
-router.get("/verify", verifyToken, verifyUserToken);
+router.get("/verify", verifyUserToken);
 
 // Protected routes - require authentication
-router.get("/profile:userID", verifyToken, getUserProfile);
-router.put("/update:userID", verifyToken, updateUser);
-router.delete("/delete:userID", verifyToken, deleteUser);
+router.get("/profile:userID", getUserProfile);
+router.put("/update:userID", updateUser);
+router.delete("/delete:userID", deleteUser);
 
 router.get("/items/:userID", getUserItems);
 router.get("/claims/:userID", getUserClaims);

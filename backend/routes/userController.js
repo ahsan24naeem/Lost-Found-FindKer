@@ -55,12 +55,12 @@ export const loginUser = async (req, res) => {
 
         console.log('Login successful, token generated');
         
-        // Set the auth cookie
+        // Set the auth cookie as a session cookie (no maxAge)
         res.cookie('auth', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 3600000 // 1 hour in milliseconds
+            // No maxAge means it's a session cookie that expires when the browser is closed
         });
 
         res.json({ 

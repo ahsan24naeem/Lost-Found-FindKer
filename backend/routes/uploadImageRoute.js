@@ -2,6 +2,7 @@ import express from 'express'
 import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
+import { verifyToken } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -60,7 +61,7 @@ const handleUploadError = (err, req, res, next) => {
   next()
 }
 
-// Upload route
+// Upload route - protected with verifyToken middleware
 router.post('/', upload.single('image'), handleUploadError, (req, res) => {
   try {
     console.log('Received upload request:', {
@@ -72,11 +73,6 @@ router.post('/', upload.single('image'), handleUploadError, (req, res) => {
     if (!req.file) {
       console.error('No file received in upload request')
       return res.status(400).json({ error: 'No file uploaded' })
-    }
-
-    if (!req.headers.authorization) {
-      console.error('No authorization header in upload request')
-      return res.status(401).json({ error: 'Authorization required' })
     }
 
     const imageUrl = `http://localhost:5000/uploads/${req.file.filename}`

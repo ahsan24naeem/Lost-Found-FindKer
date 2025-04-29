@@ -44,9 +44,34 @@ export const getCategorizedPosts = async (req, res) => {
 
 // Create a new post
 export const createPost = async (req, res) => {
+<<<<<<< HEAD
     const { userID, title, itemDescription, categoryID, itemStatus, itemLocation, imageURL } = req.body;
+=======
+    console.log('Received post creation request:', req.body);
+    const { userID, title, itemDescription, categoryID, itemStatus, itemLocation, imageURL } = req.body;
+    
+    // Validate required fields
+    if (!userID || !title || !itemDescription || !categoryID || !itemStatus || !itemLocation) {
+        console.error('Missing required fields:', { userID, title, itemDescription, categoryID, itemStatus, itemLocation });
+        return res.status(400).json({ error: "Missing required fields" });
+    }
+    
+>>>>>>> cf2126b (messages working)
     try {
+        console.log('Connecting to database...');
         let pool = await sql.connect(dbConfig);
+        console.log('Database connected successfully');
+        
+        console.log('Executing CreatePost stored procedure with params:', {
+            UserID: userID,
+            Title: title,
+            ItemDescription: itemDescription,
+            CategoryID: categoryID,
+            ItemStatus: itemStatus,
+            ItemLocation: itemLocation,
+            ImageURL: imageURL
+        });
+        
         await pool.request()
             .input("UserID", sql.Int, userID)
             .input("Title", sql.NVarChar, title)
@@ -56,10 +81,12 @@ export const createPost = async (req, res) => {
             .input("ItemLocation", sql.NVarChar, itemLocation)
             .input("ImageURL", sql.NVarChar, imageURL)
             .execute("CreatePost");
+            
+        console.log('Post created successfully');
         res.status(201).json({ message: "Post created successfully" });
     } catch (error) {
         console.error("Error creating post:", error);
-        res.status(500).json({ error: "Server error" });
+        res.status(500).json({ error: "Server error", details: error.message });
     }
 };
 
@@ -80,7 +107,6 @@ export const deletePost = async (req, res) => {
 
 export const searchPosts = async (req, res) => {
     const { term } = req.query;
-
     try {
         const pool = await sql.connect(dbConfig);
         const result = await pool.request()

@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch"
 import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import Navbar from "@/components/navbar"
+import AuthCheck from "@/components/AuthCheck"
 
 export default function PostItemPage() {
   const searchParams = useSearchParams()
@@ -28,10 +29,9 @@ export default function PostItemPage() {
   const defaultType = searchParams.get("type") || "lost"
 
   const [itemType, setItemType] = useState(defaultType)
-  const [images, setImages] = useState([])
-  const [previewImages, setPreviewImages] = useState([])
+  const [image, setImage] = useState(null)
+  const [previewImage, setPreviewImage] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const fileInputRef = useRef(null)
   const [categories, setCategories] = useState([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(true)
@@ -44,10 +44,6 @@ export default function PostItemPage() {
     location: "",
     contactEmail: user?.email || "",
     contactPhone: "",
-    identifyingFeatures: "",
-    contactPreference: "platform",
-    visibility: "public",
-    offerReward: false,
   })
 
   useEffect(() => {
@@ -91,32 +87,39 @@ export default function PostItemPage() {
   }
 
   const handleImageChange = (e) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files)
-      setImages([...images, ...filesArray])
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      setImage(file)
 
-      // Create preview URLs
-      const newPreviewImages = filesArray.map((file) => URL.createObjectURL(file))
-      setPreviewImages([...previewImages, ...newPreviewImages])
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file)
+      setPreviewImage(previewUrl)
     }
   }
 
-  const removeImage = (index) => {
-    const newImages = [...images]
-    newImages.splice(index, 1)
-    setImages(newImages)
-
-    const newPreviewImages = [...previewImages]
-    URL.revokeObjectURL(newPreviewImages[index]) // Clean up URL
-    newPreviewImages.splice(index, 1)
-    setPreviewImages(newPreviewImages)
+  const removeImage = () => {
+    setImage(null)
+    if (previewImage) {
+      URL.revokeObjectURL(previewImage) // Clean up URL
+    }
+    setPreviewImage(null)
   }
+
+  // Function to generate QR code URL
+  const generateQRCode = (postId) => {
+    const postUrl = `${window.location.origin}/post/${postId}`
+    const encodedUrl = encodeURIComponent(postUrl)
+    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodedUrl}`
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    console.log("Form submitted!")
     setIsSubmitting(true)
 
     // Check if user is authenticated
-    if (!user || !user.token) {
+    if (!user) {
+      console.log("No user found, redirecting to login")
       toast({
         title: "Error",
         description: "Please log in to create a post",
@@ -127,8 +130,12 @@ export default function PostItemPage() {
       return
     }
 
+    console.log("User object:", user)
+    console.log("User ID:", user.id)
+
     // Validate form
     if (!formData.title || !formData.description || !formData.category || !formData.date || !formData.location) {
+      console.log("Missing required fields:", formData)
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -139,84 +146,85 @@ export default function PostItemPage() {
     }
 
     try {
-      let uploadedImageURLs = []
+      let uploadedImageURL = null
    
-      // 1. First upload the images
-      if (images.length > 0) {
-        const uploadPromises = images.map(async (image) => {
-          const formData = new FormData()
-          formData.append('image', image)
+      // 1. First upload the image if one was selected
+      if (image) {
+        console.log("Image selected, preparing to upload")
+        const formData = new FormData()
+        formData.append('image', image)
    
-          console.log('Uploading image:', image.name)
-          try {
-            // First test if the upload endpoint is accessible
-            const testResponse = await fetch('http://localhost:5000/api/upload-image/test')
-            if (!testResponse.ok) {
-              throw new Error(`Test endpoint failed: ${testResponse.status} ${testResponse.statusText}`)
-            }
-            const testData = await testResponse.json()
-            console.log('Test endpoint response:', testData)
-
-            // Now try the actual upload
-            const response = await fetch('http://localhost:5000/api/upload-image', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${user.token}`,
-              },
-              body: formData,
-            })
-   
-            console.log('Upload response status:', response.status)
-            const responseText = await response.text()
-            console.log('Raw response:', responseText)
-            
-            if (!response.ok) {
-              let errorData
-              try {
-                errorData = JSON.parse(responseText)
-              } catch (e) {
-                throw new Error(`Server returned non-JSON response: ${responseText}`)
-              }
-              throw new Error(errorData.error || `Failed to upload image: ${response.status} ${response.statusText}`)
-            }
-   
-            let data
-            try {
-              data = JSON.parse(responseText)
-            } catch (e) {
-              throw new Error(`Invalid JSON response: ${responseText}`)
-            }
-
-            if (!data.imageUrl) {
-              throw new Error('No image URL returned from server')
-            }
-            console.log('Successfully uploaded image:', data.imageUrl)
-            return data.imageUrl
-          } catch (error) {
-            console.error('Upload error:', error)
-            throw error
-          }
-        })
-   
+        console.log('Uploading image:', image.name)
         try {
-          uploadedImageURLs = await Promise.all(uploadPromises)
-          console.log('All images uploaded successfully:', uploadedImageURLs)
+          // First test if the upload endpoint is accessible
+          console.log("Testing upload endpoint...")
+          const testResponse = await fetch('http://localhost:5000/api/upload-image/test')
+          console.log("Test response status:", testResponse.status)
+          
+          if (!testResponse.ok) {
+            throw new Error(`Test endpoint failed: ${testResponse.status} ${testResponse.statusText}`)
+          }
+          const testData = await testResponse.json()
+          console.log('Test endpoint response:', testData)
+
+          // Now try the actual upload
+          console.log("Sending image to upload endpoint...")
+          const response = await fetch('http://localhost:5000/api/upload-image', {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+          })
+   
+          console.log('Upload response status:', response.status)
+          const responseText = await response.text()
+          console.log('Raw response:', responseText)
+          
+          if (!response.ok) {
+            let errorData
+            try {
+              errorData = JSON.parse(responseText)
+            } catch (e) {
+              throw new Error(`Server returned non-JSON response: ${responseText}`)
+            }
+            throw new Error(errorData.error || `Failed to upload image: ${response.status} ${response.statusText}`)
+          }
+   
+          let data
+          try {
+            data = JSON.parse(responseText)
+          } catch (e) {
+            throw new Error(`Invalid JSON response: ${responseText}`)
+          }
+
+          if (!data.imageUrl) {
+            throw new Error('No image URL returned from server')
+          }
+          console.log('Successfully uploaded image:', data.imageUrl)
+          uploadedImageURL = data.imageUrl
         } catch (error) {
-          console.error('Error uploading images:', error)
-          throw new Error(`Failed to upload images: ${error.message}`)
+          console.error('Upload error:', error)
+          throw error
         }
+      } else {
+        console.log("No image selected for upload")
       }
    
       // 2. Fetch category ID
+      console.log("Fetching categories...")
       const categoryResponse = await fetch('http://localhost:5000/api/categories/all')
+      console.log("Category response status:", categoryResponse.status)
+      
       if (!categoryResponse.ok) {
         throw new Error('Failed to fetch categories')
       }
       const categories = await categoryResponse.json()
+      console.log("Categories fetched:", categories)
+      
       const category = categories.find(c => c.CategoryName === formData.category)
       if (!category) {
         throw new Error('Invalid category selected')
       }
+      console.log("Selected category:", category)
    
       // 3. Prepare post data
       const postData = {
@@ -226,31 +234,62 @@ export default function PostItemPage() {
         categoryID: category.CategoryID,
         itemStatus: itemType,
         itemLocation: formData.location,
-        images: uploadedImageURLs,
-        privateDetails: formData.identifyingFeatures || '',
+        imageURL: uploadedImageURL,
       }
-   
+      
+      console.log('Prepared post data:', postData)
+         
       // 4. Send post data
-      const response = await fetch('http://localhost:5000/api/post/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`,
-        },
-        body: JSON.stringify(postData),
-      })
-   
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create post')
+      try {
+        console.log('Sending post data to backend...');
+        
+        const response = await fetch('http://localhost:5000/api/post/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(postData),
+        });
+        
+        console.log('Response status:', response.status);
+        
+        // Get the response text first
+        const responseText = await response.text();
+        console.log('Raw response text:', responseText);
+        
+        // Try to parse it as JSON
+        let responseData;
+        try {
+          responseData = JSON.parse(responseText);
+          console.log('Parsed response data:', responseData);
+        } catch (e) {
+          console.error('Failed to parse response as JSON:', e);
+          throw new Error('Server returned invalid JSON response');
+        }
+        
+        // Check if the response was successful
+        if (!response.ok) {
+          throw new Error(responseData.error || 'Failed to create post');
+        }
+        
+        // Success!
+        toast({
+          title: "Success",
+          description: `Your ${itemType} item has been posted successfully!`,
+        });
+        
+        router.push("/home");
+      } catch (error) {
+        console.error('Error creating post:', error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create post. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
       }
-
-      toast({
-        title: "Success",
-        description: `Your ${itemType} item has been posted successfully!`,
-      })
-
-      router.push("/home")
     } catch (error) {
       console.error('Error creating post:', error)
       toast({
@@ -258,13 +297,13 @@ export default function PostItemPage() {
         description: error.message || "Failed to create post. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
   
   return (
     <>
+      <AuthCheck />
       <Navbar />
       <div className="container max-w-4xl py-8">
         <div className="mb-6 flex items-center gap-2">
@@ -401,7 +440,7 @@ export default function PostItemPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Upload Images</Label>
+                  <Label>Upload Image</Label>
                   <Button
                     type="button"
                     variant="ghost"
@@ -410,16 +449,16 @@ export default function PostItemPage() {
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <ImageIcon className="mr-1 h-4 w-4" />
-                    Add Photos
+                    Add Photo
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                  {previewImages.map((url, index) => (
-                    <div key={index} className="relative aspect-square rounded-md border bg-muted">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                  {previewImage ? (
+                    <div className="relative aspect-square rounded-md border bg-muted">
                       <img
-                        src={url || "/placeholder.svg"}
-                        alt={`Preview ${index}`}
+                        src={previewImage}
+                        alt="Preview"
                         className="h-full w-full rounded-md object-cover"
                       />
                       <Button
@@ -427,14 +466,12 @@ export default function PostItemPage() {
                         variant="destructive"
                         size="icon"
                         className="absolute right-1 top-1 h-6 w-6"
-                        onClick={() => removeImage(index)}
+                        onClick={removeImage}
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                  ))}
-
-                  {previewImages.length < 5 && (
+                  ) : (
                     <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border border-dashed bg-muted/50 hover:bg-muted">
                       <div className="flex flex-col items-center justify-center gap-1">
                         <Camera className="h-8 w-8 text-muted-foreground" />
@@ -445,142 +482,31 @@ export default function PostItemPage() {
                         type="file"
                         accept="image/*"
                         className="hidden"
-                        multiple
                         onChange={handleImageChange}
                       />
                     </label>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Upload up to 5 images. Clear photos help with identification.
+                  Upload a clear photo to help with identification.
                 </p>
               </div>
-
-              <div className="flex items-center justify-between">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="text-primary"
-                  onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                >
-                  {showAdvancedOptions ? "Hide Advanced Options" : "Show Advanced Options"}
-                </Button>
-
-                <div className="flex items-center gap-2">
-                  <Paperclip className="h-4 w-4 text-muted-foreground" />
-                  <Tag className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </div>
-
-              {showAdvancedOptions && (
-                <>
-                  <Separator />
-
-                  {itemType === "found" && (
-                    <div className="space-y-2">
-                      <Label>Identifying Features (Private)</Label>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Add details that only the owner would know. These will be kept private and used to verify
-                        ownership.
-                      </p>
-                      <Textarea
-                        name="identifyingFeatures"
-                        value={formData.identifyingFeatures}
-                        onChange={handleChange}
-                        placeholder="e.g., Serial number, distinctive marks, contents if it's a bag..."
-                        rows={3}
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label>Contact Information</Label>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="contactEmail">Email</Label>
-                        <Input
-                          id="contactEmail"
-                          name="contactEmail"
-                          type="email"
-                          value={formData.contactEmail}
-                          onChange={handleChange}
-                          placeholder="your@email.com"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="contactPhone">Phone Number</Label>
-                        <Input
-                          id="contactPhone"
-                          name="contactPhone"
-                          value={formData.contactPhone}
-                          onChange={handleChange}
-                          placeholder="+1 (555) 123-4567"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Contact Preferences</Label>
-                    <RadioGroup
-                      defaultValue="platform"
-                      value={formData.contactPreference}
-                      onValueChange={(value) => handleSelectChange("contactPreference", value)}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem id="platform" value="platform" />
-                        <Label htmlFor="platform">Platform notifications only</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem id="email" value="email" />
-                        <Label htmlFor="email">Email notifications</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem id="phone" value="phone" />
-                        <Label htmlFor="phone">Phone notifications</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Post Visibility</Label>
-                    <Select
-                      defaultValue="public"
-                      value={formData.visibility}
-                      onValueChange={(value) => handleSelectChange("visibility", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select visibility" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="public">Public - Anyone can see</SelectItem>
-                        <SelectItem value="friends">Friends Only</SelectItem>
-                        <SelectItem value="private">Private - Only through direct link</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex flex-col space-y-1">
-                      <Label htmlFor="reward">Offer Reward</Label>
-                      <span className="text-xs text-muted-foreground">Only for lost items</span>
-                    </div>
-                    <Switch
-                      id="reward"
-                      name="offerReward"
-                      checked={formData.offerReward}
-                      onCheckedChange={(checked) => handleSelectChange("offerReward", checked)}
-                      disabled={itemType !== "lost"}
-                    />
-                  </div>
-                </>
-              )}
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => router.push("/home")}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  onClick={(e) => {
+                    console.log("Submit button clicked");
+                    // Prevent default to handle manually
+                    e.preventDefault();
+                    // Call handleSubmit directly
+                    handleSubmit(e);
+                  }}
+                >
                   {isSubmitting ? (
                     <>
                       <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>

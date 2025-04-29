@@ -236,17 +236,19 @@ VALUES
 -- =========================
 -- 👁️ VIEWS
 -- =========================
-
+select * from Users
 GO
--- View: All Posts
+-- View: All PostsCREATE VIEW AllPosts AS
 CREATE VIEW AllPosts AS
-SELECT i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
-       i.ItemLocation, i.DateReported, i.ImageURL, u.FullName AS PostedBy
+SELECT TOP 100 PERCENT
+    i.ItemID, i.Title, i.ItemDescription, c.CategoryName, i.ItemStatus, 
+    i.ItemLocation, i.DateReported, i.ImageURL, u.FullName AS PostedBy, u.UserID
 FROM Items i
 JOIN Users u ON i.UserID = u.UserID
 LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
-order by i.DateReported desc;
+ORDER BY i.DateReported DESC;
 
+select * from AllPosts
 
 GO
 -- View: Recent Posts (1 day old)
