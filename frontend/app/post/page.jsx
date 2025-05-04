@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Camera, ChevronLeft, MapPin, Upload, X, ImageIcon, Paperclip, Tag, Calendar } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -156,46 +156,18 @@ export default function PostItemPage() {
    
         console.log('Uploading image:', image.name)
         try {
-          // First test if the upload endpoint is accessible
-          console.log("Testing upload endpoint...")
-          const testResponse = await fetch('http://localhost:5000/api/upload-image/test')
-          console.log("Test response status:", testResponse.status)
-          
-          if (!testResponse.ok) {
-            throw new Error(`Test endpoint failed: ${testResponse.status} ${testResponse.statusText}`)
-          }
-          const testData = await testResponse.json()
-          console.log('Test endpoint response:', testData)
-
-          // Now try the actual upload
-          console.log("Sending image to upload endpoint...")
           const response = await fetch('http://localhost:5000/api/upload-image', {
             method: 'POST',
             credentials: 'include',
             body: formData,
           })
    
-          console.log('Upload response status:', response.status)
-          const responseText = await response.text()
-          console.log('Raw response:', responseText)
-          
           if (!response.ok) {
-            let errorData
-            try {
-              errorData = JSON.parse(responseText)
-            } catch (e) {
-              throw new Error(`Server returned non-JSON response: ${responseText}`)
-            }
-            throw new Error(errorData.error || `Failed to upload image: ${response.status} ${response.statusText}`)
+            const errorData = await response.json()
+            throw new Error(errorData.error || `Failed to upload image: ${response.status}`)
           }
    
-          let data
-          try {
-            data = JSON.parse(responseText)
-          } catch (e) {
-            throw new Error(`Invalid JSON response: ${responseText}`)
-          }
-
+          const data = await response.json()
           if (!data.imageUrl) {
             throw new Error('No image URL returned from server')
           }
@@ -205,26 +177,21 @@ export default function PostItemPage() {
           console.error('Upload error:', error)
           throw error
         }
-      } else {
-        console.log("No image selected for upload")
       }
    
       // 2. Fetch category ID
       console.log("Fetching categories...")
       const categoryResponse = await fetch('http://localhost:5000/api/categories/all')
-      console.log("Category response status:", categoryResponse.status)
       
       if (!categoryResponse.ok) {
         throw new Error('Failed to fetch categories')
       }
       const categories = await categoryResponse.json()
-      console.log("Categories fetched:", categories)
       
       const category = categories.find(c => c.CategoryName === formData.category)
       if (!category) {
         throw new Error('Invalid category selected')
       }
-      console.log("Selected category:", category)
    
       // 3. Prepare post data
       const postData = {
@@ -232,7 +199,7 @@ export default function PostItemPage() {
         title: formData.title,
         itemDescription: formData.description,
         categoryID: category.CategoryID,
-        itemStatus: itemType,
+        itemStatus: itemType.charAt(0).toUpperCase() + itemType.slice(1),
         itemLocation: formData.location,
         imageURL: uploadedImageURL,
       }
@@ -240,63 +207,40 @@ export default function PostItemPage() {
       console.log('Prepared post data:', postData)
          
       // 4. Send post data
-      try {
-        console.log('Sending post data to backend...');
-        
-        const response = await fetch('http://localhost:5000/api/post/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(postData),
-        });
-        
-        console.log('Response status:', response.status);
-        
-        // Get the response text first
-        const responseText = await response.text();
-        console.log('Raw response text:', responseText);
-        
-        // Try to parse it as JSON
-        let responseData;
-        try {
-          responseData = JSON.parse(responseText);
-          console.log('Parsed response data:', responseData);
-        } catch (e) {
-          console.error('Failed to parse response as JSON:', e);
-          throw new Error('Server returned invalid JSON response');
-        }
-        
-        // Check if the response was successful
-        if (!response.ok) {
-          throw new Error(responseData.error || 'Failed to create post');
-        }
-        
-        // Success!
-        toast({
-          title: "Success",
-          description: `Your ${itemType} item has been posted successfully!`,
-        });
-        
-        router.push("/home");
-      } catch (error) {
-        console.error('Error creating post:', error);
-        toast({
-          title: "Error",
-          description: error.message || "Failed to create post. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsSubmitting(false);
+      const response = await fetch('http://localhost:5000/api/post/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(postData),
+      });
+      
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to create post');
       }
+      
+      // Success!
+      toast({
+        title: "Success",
+        description: `Your ${itemType} item has been posted successfully!`,
+      });
+      
+      // Wait a moment before redirecting to ensure the toast is visible
+      setTimeout(() => {
+        router.push("/home");
+      }, 1000);
+      
     } catch (error) {
-      console.error('Error creating post:', error)
+      console.error('Error creating post:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to create post. Please try again.",
         variant: "destructive",
-      })
+      });
+    } finally {
       setIsSubmitting(false);
     }
   }
@@ -319,8 +263,7 @@ export default function PostItemPage() {
           <CardHeader>
             <div className="flex items-center gap-4">
               <Avatar>
-                <AvatarImage src="/placeholder.svg?height=40&width=40" alt={user?.name || "User"} />
-                <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+                <AvatarFallback>{user?.name ? user.name.charAt(0) : "😀"}</AvatarFallback>
               </Avatar>
               <div>
                 <CardTitle>Create a Post</CardTitle>

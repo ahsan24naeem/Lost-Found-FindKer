@@ -261,57 +261,58 @@ export default function TermsOfServicePage() {
             </p>
             <p className="mb-4">
               Upon termination, your right to use the Service will immediately cease. If you wish to terminate your
-              account, you may simply discontinue immediately cease. If you wish to terminate your account, you may simply discontinue using the Service.
+              account, you may simply discontinue using the Service.
+            </p>
+            <p className="mb-4">
+              Upon termination, all provisions of these Terms which by their nature should survive termination shall survive termination, including, without limitation, ownership provisions, warranty disclaimers, indemnity and limitations of liability.
+            </p>
+          </section>
 
-Upon termination, all provisions of these Terms which by their nature should survive termination shall survive termination, including, without limitation, ownership provisions, warranty disclaimers, indemnity and limitations of liability.
+          {/* Governing Law */}
+          <section className="mb-8" id="governing">
+            <h2 className="mb-4 text-2xl font-bold">9. Governing Law</h2>
+            <p className="mb-4">
+              These Terms shall be governed and construed in accordance with the laws of the United States, without regard to its conflict of law provisions.
+            </p>
+            <p className="mb-4">
+              Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights. If any provision of these Terms is held to be invalid or unenforceable by a court, the remaining provisions of these Terms will remain in effect.
+            </p>
+          </section>
 
-</section>
+          {/* Changes to Terms */}
+          <section className="mb-8" id="changes">
+            <h2 className="mb-4 text-2xl font-bold">10. Changes to Terms</h2>
+            <p className="mb-4">
+              We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will try to provide at least 30 days' notice prior to any new terms taking effect.
+            </p>
+            <p className="mb-4">
+              What constitutes a material change will be determined at our sole discretion. By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms.
+            </p>
+          </section>
 
-{/* Governing Law */}
-<section className="mb-8" id="governing">
-  <h2 className="mb-4 text-2xl font-bold">9. Governing Law</h2>
-  <p className="mb-4">
-    These Terms shall be governed and construed in accordance with the laws of the United States, without regard to its conflict of law provisions.
-  </p>
-  <p className="mb-4">
-    Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights. If any provision of these Terms is held to be invalid or unenforceable by a court, the remaining provisions of these Terms will remain in effect.
-  </p>
-</section>
+          {/* Contact Us */}
+          <section className="mb-8" id="contact">
+            <h2 className="mb-4 text-2xl font-bold">11. Contact Us</h2>
+            <p className="mb-4">
+              If you have any questions about these Terms, please contact us at:
+              <br />
+              <a href="mailto:ahsan24naeem@gmail.com" className="text-primary hover:underline">
+                ahsan24naeem@gmail.com
+              </a>
+            </p>
+          </section>
 
-{/* Changes to Terms */}
-<section className="mb-8" id="changes">
-  <h2 className="mb-4 text-2xl font-bold">10. Changes to Terms</h2>
-  <p className="mb-4">
-    We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will try to provide at least 30 days' notice prior to any new terms taking effect.
-  </p>
-  <p className="mb-4">
-    What constitutes a material change will be determined at our sole discretion. By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms.
-  </p>
-</section>
-
-{/* Contact Us */}
-<section className="mb-8" id="contact">
-  <h2 className="mb-4 text-2xl font-bold">11. Contact Us</h2>
-  <p className="mb-4">
-    If you have any questions about these Terms, please contact us at:
-    <br />
-    <a href="mailto:legal@findit.com" className="text-primary hover:underline">
-      legal@findit.com
-    </a>
-  </p>
-</section>
-
-{/* CTA */}
-<div className="mt-12 rounded-lg bg-muted p-6 text-center">
-  <h2 className="text-xl font-bold">Have questions about our terms?</h2>
-  <p className="mt-2 text-muted-foreground">Our team is here to help clarify any concerns.</p>
-  <Button className="mt-4" asChild>
-    <Link href="/contact">
-      Contact Our Legal Team
-      <ArrowRight className="ml-2 h-4 w-4" />
-    </Link>
-  </Button>
-</div>
+          {/* CTA */}
+          <div className="mt-12 rounded-lg bg-muted p-6 text-center">
+            <h2 className="text-xl font-bold">Have questions about our terms?</h2>
+            <p className="mt-2 text-muted-foreground">Our team is here to help clarify any concerns.</p>
+            <Button className="mt-4" asChild>
+              <Link href="/contact">
+                Contact Our Legal Team
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </main>
       <Footer />

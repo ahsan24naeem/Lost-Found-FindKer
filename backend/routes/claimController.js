@@ -86,24 +86,63 @@ export const deleteClaim = async (req, res) => {
     }
 };
 
-
-// Admin processes a claim (Approve or Reject) new
-export const adminProcessClaim = async (req, res) => {
-    const { claimID, adminID, decision } = req.body; 
-
+// Acknowledge a claim (item owner)
+export const acknowledgeClaim = async (req, res) => {
+    const { itemID, claimID, userID } = req.body;
+    
+    if (!itemID || !claimID || !userID) {
+        return res.status(400).json({ 
+            error: "Missing required parameters: itemID, claimID, and userID are required" 
+        });
+    }
+    
     try {
         let pool = await sql.connect(dbConfig);
-        await pool.request()
+        
+        // Execute the stored procedure
+        const result = await pool.request()
+            .input("ItemID", sql.Int, itemID)
+            .input("PosterID", sql.Int, userID)
             .input("ClaimID", sql.Int, claimID)
-            .input("AdminID", sql.Int, adminID)
-            .input("Decision", sql.NVarChar, decision)
-            .execute("AdminProcessClaim");
-
-        res.status(200).json({ message: `Claim has been ${decision.toLowerCase()}d successfully.` });
+            .execute("AcknowledgeClaim");
+        
+        // Check if the procedure returned any error messages
+        if (result.returnValue !== 0) {
+            return res.status(400).json({ 
+                error: "Failed to acknowledge claim. Please verify you are the item owner and the claim is pending." 
+            });
+        }
+        
+        res.status(200).json({ 
+            success: true, 
+            message: "Claim acknowledged successfully" 
+        });
     } catch (error) {
-        console.error("Error processing claim:", error);
-        res.status(500).json({ error: "Server error while processing claim" });
+        console.error("Error acknowledging claim:", error);
+        res.status(500).json({ 
+            error: "Server error while acknowledging claim",
+            details: error.message 
+        });
     }
 };
 
-
+// Admin process claim (admin only)
+export const adminProcessClaim = async (req, res) => {
+    const { claimID, status } = req.body;
+    console.log(claimID, status);
+    
+    try {
+        let pool = await sql.connect(dbConfig);
+        
+        // Execute the stored procedure
+        await pool.request()
+            .input("ClaimID", sql.Int, claimID)
+            .input("Status", sql.NVarChar, status)
+            .execute("AdminProcessClaim");
+        
+        res.status(200).json({ success: true, message: "Claim processed successfully" });
+    } catch (error) {
+        console.error("Error processing claim:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+};

@@ -7,7 +7,9 @@ import {
     createPost, 
     deletePost,
     searchPosts,
-    markItemAsClaimed
+    markItemAsClaimed,
+    getTotalPosts,
+    getPendingItems
 } from "./postController.js";
 
 const router = express.Router();
@@ -17,10 +19,13 @@ router.get("/all", getAllPosts);
 // Protected routes - require authentication
 router.post("/mark-as-claimed", markItemAsClaimed);
 router.post("/create", createPost);
-router.delete("/:itemID", deletePost);
+router.delete("/delete/:itemID", deletePost);
 router.get("/recent", getRecentPosts);
 router.get("/category/:categoryName", getCategorizedPosts);
 router.get("/search", searchPosts);
+router.get("/postCount", getTotalPosts);
+router.get('/pending-items', getPendingItems);
+
 
 export default router;
 

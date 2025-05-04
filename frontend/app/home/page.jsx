@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useInView } from "react-intersection-observer"
 import { Filter, Plus } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -34,6 +34,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [selectedCategories, setSelectedCategories] = useState([])
   const [showFilterMenu, setShowFilterMenu] = useState(false)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [allPosts, setAllPosts] = useState([]) // Store all posts separately
 
   // Available categories
   const [categories, setCategories] = useState([])
@@ -87,20 +89,13 @@ export default function Home() {
     const fetchPosts = async () => {
       setLoading(true)
       try {
-        let endpoint = 'http://localhost:5000/api/post/all'
-        if (activeTab === 'recent') {
-          endpoint = 'http://localhost:5000/api/post/recent'
-        } else if (activeTab === 'category' && selectedCategories.length > 0) {
-          endpoint = `http://localhost:5000/api/post/category/${selectedCategories[0]}`
-        }
-
-        const response = await fetch(endpoint)
+        const response = await fetch('http://localhost:5000/api/post/all')
         if (!response.ok) {
           throw new Error('Failed to fetch posts')
         }
-
         const data = await response.json()
-        setFeedItems(data)
+        setAllPosts(data) // Store all posts
+        setFeedItems(data) // Initial feed items
       } catch (error) {
         console.error('Error fetching posts:', error)
         toast({
@@ -112,10 +107,29 @@ export default function Home() {
         setLoading(false)
       }
     }
-
     fetchPosts()
-  }, [activeTab, selectedCategories, toast])
+  }, [toast])
 
+  // Handle search and filter
+  useEffect(() => {
+    let filtered = [...allPosts]
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(post => 
+        post.Title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.ItemDescription?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.ItemLocation?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+    
+    // Apply category filter
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter(post => selectedCategories.includes(post.CategoryName))
+    }
+    
+    setFeedItems(filtered)
+  }, [searchTerm, selectedCategories, allPosts])
 
   const toggleCategory = (category) => {
     setSelectedCategories(prev => {
@@ -146,15 +160,14 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex-1 border-x">
-        <Navbar />
+        <Navbar onSearch={setSearchTerm} />
         <div className="container max-w-3xl px-4 py-6">
-          {/* Create Post */}
+          {/* Create Post Card */}
           <Card className="mb-6">
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
                 <Avatar>
-                  <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
-                  <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+                  <AvatarFallback>{user?.name ? user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
                 </Avatar>
                 <div className="relative flex-1">
                   <Link href="/post" className="block w-full">
@@ -193,35 +206,26 @@ export default function Home() {
           </Card>
 
           {/* Feed Tabs */}
-          <div className="mb-6">
-            <Tabs defaultValue="all" onValueChange={setActiveTab}>
-              <div className="flex items-center justify-between">
-                <TabsList>
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="lost">Lost</TabsTrigger>
-                  <TabsTrigger value="found">Found</TabsTrigger>
-                </TabsList>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Filter className="mr-2 h-4 w-4" />
-                      Filter {selectedCategories.length > 0 && `(${selectedCategories.length})`}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    {categories.map((category) => (
-                      <DropdownMenuCheckboxItem
-                        key={category.CategoryName}
-                        checked={selectedCategories.includes(category.CategoryName)}
-                        onCheckedChange={() => toggleCategory(category.CategoryName)}
-                      >
-                        {category.CategoryName}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </Tabs>
+          <div className="mb-6 flex items-center justify-between">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filter {selectedCategories.length > 0 && `(${selectedCategories.length})`}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {categories.map((category) => (
+                  <DropdownMenuCheckboxItem
+                    key={category.CategoryName}
+                    checked={selectedCategories.includes(category.CategoryName)}
+                    onCheckedChange={() => toggleCategory(category.CategoryName)}
+                  >
+                    {category.CategoryName}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Feed Items */}

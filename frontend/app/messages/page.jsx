@@ -85,14 +85,18 @@ export default function MessagesPage() {
       .then(data => {
         const transformedMessages = Array.isArray(data) ? data.map(msg => ({
           id: msg.MessageID,
-          senderID: msg.SenderID,
-          senderName: msg.SenderName || `User ${msg.SenderID}`,
-          receiverID: msg.ReceiverID,
-          receiverName: msg.ReceiverName || `User ${msg.ReceiverID}`,
+          senderID: msg.senderID,
+          senderName: msg.Sender,
+          receiverID: msg.receiverID,
+          receiverName: msg.Receiver,
           messageText: msg.MessageText,
           timestamp: msg.CreatedAt,
-          isCurrentUser: Number(msg.SenderID) === Number(user.id)
+          isCurrentUser: Number(msg.senderID) === Number(user.id)
         })) : []
+        // Log sender and receiver names for each message
+        transformedMessages.forEach(msg => {
+          console.log(`MessageID: ${msg.id}, Sender: ${msg.senderName}, Receiver: ${msg.receiverName}`);
+        });
         setMessages(transformedMessages)
       })
       .catch(err => {
@@ -138,15 +142,15 @@ export default function MessagesPage() {
       if (!messagesResponse.ok) throw new Error(`HTTP error! status: ${messagesResponse.status}`)
       
       const messagesData = await messagesResponse.json()
-      const transformedMessages = Array.isArray(messagesData) ? data.map(msg => ({
+      const transformedMessages = Array.isArray(messagesData) ? messagesData.map(msg => ({
         id: msg.MessageID,
-        senderID: msg.SenderID,
-        senderName: msg.SenderName || `User ${msg.SenderID}`,
-        receiverID: msg.ReceiverID,
-        receiverName: msg.ReceiverName || `User ${msg.ReceiverID}`,
+        senderID: msg.senderID,
+        senderName: msg.Sender,
+        receiverID: msg.receiverID,
+        receiverName: msg.Receiver,
         messageText: msg.MessageText,
         timestamp: msg.CreatedAt,
-        isCurrentUser: Number(msg.SenderID) === Number(user.id)
+        isCurrentUser: Number(msg.senderID) === Number(user.id)
       })) : []
       
       setMessages(transformedMessages)
@@ -209,8 +213,7 @@ export default function MessagesPage() {
                     >
                       <div className="relative">
                         <Avatar>
-                          <AvatarImage src={userAvatar} alt={userName} />
-                          <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
+                          <AvatarFallback>{userName ? userName.charAt(0) : "😀"}</AvatarFallback>
                         </Avatar>
                         {isOnline && (
                           <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background"></span>
@@ -226,7 +229,7 @@ export default function MessagesPage() {
                         </div>
                         <p className="truncate text-sm text-muted-foreground">
                           {lastMessage?.sender === user?.id ? "You: " : ""}
-                          {lastMessage?.text || "No messages yet"}
+                          {lastMessage?.text || "Open Conversation"}
                         </p>
                         {unreadCount > 0 && <Badge className="mt-1">{unreadCount}</Badge>}
                       </div>
@@ -245,29 +248,11 @@ export default function MessagesPage() {
             <div className="flex h-16 items-center justify-between border-b px-4">
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarImage
-                    src={activeConversation?.avatar || "/placeholder.svg"}
-                    alt={activeConversation?.FullName || "User"}
-                  />
-                  <AvatarFallback>{activeConversation?.FullName?.charAt(0) || "U"}</AvatarFallback>
+                  <AvatarFallback>{activeConversation?.FullName ? activeConversation.FullName.charAt(0) : "😀"}</AvatarFallback>
                 </Avatar>
                 <div>
                   <h2 className="font-medium">{activeConversation?.FullName || "User"}</h2>
-                  <p className="text-xs text-muted-foreground">
-                    {activeConversation?.isOnline ? "Online" : "Offline"}
-                  </p>
                 </div>
-              </div>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="icon">
-                  <Phone className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <Video className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <Info className="h-5 w-5" />
-                </Button>
               </div>
             </div>
 
@@ -282,30 +267,30 @@ export default function MessagesPage() {
                   </div>
                 ) : (
                   messages.map((message) => {
-                    const isCurrentUser = message.isCurrentUser || Number(message.senderID) === Number(user?.id)
+                    // Sender's messages on the left, receiver's on the right
+                    const isSender = Number(message.senderID) !== Number(user?.id)
                     return (
                       <div
                         key={message.id}
-                        className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
+                        className={`flex ${isSender ? "justify-start" : "justify-end"}`}
                       >
-                        <div className={`flex max-w-[80%] gap-2 ${isCurrentUser ? "flex-row-reverse" : ""}`}>
-                          {!isCurrentUser && (
+                        <div className={`flex max-w-[80%] gap-2 ${isSender ? "" : "flex-row-reverse"}`}>
+                          {isSender && (
                             <Avatar className="h-8 w-8 mt-1">
-                              <AvatarImage src={activeConversation?.avatar} />
                               <AvatarFallback>{message.senderName?.charAt(0)}</AvatarFallback>
                             </Avatar>
                           )}
                           <div className="flex flex-col">
-                            <span className={`text-xs text-muted-foreground mb-1 ${isCurrentUser ? "text-right" : ""}`}>
-                              {isCurrentUser ? "You" : message.senderName}
+                            <span className={`text-xs text-muted-foreground mb-1 ${isSender ? "text-left" : "text-right"}`}>
+                              {isSender ? message.senderName : "You"}
                             </span>
                             <div
                               className={`rounded-lg p-3 ${
-                                isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                                isSender ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
                               }`}
                             >
                               <p>{message.messageText}</p>
-                              <p className={`mt-1 text-xs opacity-70 ${isCurrentUser ? "text-right" : "text-left"}`}>
+                              <p className={`mt-1 text-xs opacity-70 ${isSender ? "text-left" : "text-right"}`}>
                                 {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
                               </p>
                             </div>
@@ -321,12 +306,6 @@ export default function MessagesPage() {
             {/* Message Input */}
             <div className="border-t p-4">
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon">
-                  <Paperclip className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon">
-                  <ImageIcon className="h-5 w-5" />
-                </Button>
                 <Input
                   placeholder="Type a message..."
                   value={messageText}
@@ -338,9 +317,6 @@ export default function MessagesPage() {
                     }
                   }}
                 />
-                <Button variant="ghost" size="icon">
-                  <Smile className="h-5 w-5" />
-                </Button>
                 <Button size="icon" onClick={handleSendMessage} disabled={!messageText.trim()}>
                   <Send className="h-5 w-5" />
                 </Button>

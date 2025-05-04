@@ -12,14 +12,47 @@ export function AuthProvider({ children }) {
 
   // Check if user is logged in on initial load
   useEffect(() => {
-    // Set loading to false immediately without checking auth
-    setLoading(false);
-    
-    // Clear user state when component unmounts
-    return () => {
-      setUser(null);
+    const checkAuth = async () => {
+      try {
+        // Check localStorage first
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+          setLoading(false);
+          return;
+        }
+
+        // If no stored user, verify with backend
+        const res = await fetch('http://localhost:5000/api/user/verify', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        if (!res.ok) {
+          setUser(null);
+          localStorage.removeItem('user');
+          setLoading(false);
+          return;
+        }
+
+        const data = await res.json();
+        const userData = {
+          id: data.user.id,
+          email: data.user.email,
+          name: data.user.name,
+          role: data.user.role,
+        };
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+      } catch (err) {
+        setUser(null);
+        localStorage.removeItem('user');
+      } finally {
+        setLoading(false);
+      }
     };
-  }, [])
+    checkAuth();
+  }, []);
 
   // Login function
   const login = async (userData) => {
@@ -29,7 +62,6 @@ export function AuthProvider({ children }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Important for cookies
         body: JSON.stringify({
           email: userData.email,
           password: userData.password,
@@ -42,8 +74,8 @@ export function AuthProvider({ children }) {
         throw new Error(data.error || 'Login failed');
       }
       
-      // Set user state without persisting
-      setUser({
+      // Set user state and store in localStorage
+      const user = {
         id: data.user.id,
         email: data.user.email,
         name: data.user.name,
@@ -52,7 +84,10 @@ export function AuthProvider({ children }) {
         creationDate: data.user.creationDate,
         gender: data.user.gender,
         phoneNumber: data.user.phoneNumber
-      });
+      };
+      
+      setUser(user);
+      localStorage.setItem('user', JSON.stringify(user));
       
       // Redirect based on role
       if (data.user.role === "Admin") {
@@ -102,11 +137,7 @@ export function AuthProvider({ children }) {
       };
 
       setUser(user);
-      try {
-        localStorage.setItem("user", JSON.stringify(user));
-      } catch (error) {
-        console.error("Error setting localStorage:", error);
-      }
+      localStorage.setItem('user', JSON.stringify(user));
       router.push("/home");
     } catch (error) {
       console.error("Signup error:", error);
@@ -125,6 +156,7 @@ export function AuthProvider({ children }) {
       console.error('Logout error:', error);
     } finally {
       setUser(null);
+      localStorage.removeItem('user');
       router.push('/login');
     }
   };

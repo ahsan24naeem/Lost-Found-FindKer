@@ -25,28 +25,36 @@ export default function SettingsPage() {
   const { toast } = useToast()
   const { user, setUser, logout } = useAuth()
 
-  // State for editable user fields
+  // Initialize with static values to avoid hydration mismatch
   const [form, setForm] = useState({
-    name: user?.name || user?.fullName || "",
-    username: user?.username || "",
-    email: user?.email || "",
-    phone: user?.phone || user?.phoneNumber || "",
-    avatar: user?.avatar || user?.profilePic || "/placeholder.svg?height=200&width=200",
-    bio: user?.bio || "",
+    name: "",
+    username: "",
+    email: "",
+    phone: "",
+    avatar: "/placeholder.svg?height=200&width=200",
+    bio: "",
     password: ""
   })
 
-  // Update form state when user changes
+  // Update form state when user changes and only on client
   useEffect(() => {
-    setForm({
-      name: user?.name || user?.fullName || "",
-      username: user?.username || "",
-      email: user?.email || "",
-      phone: user?.phone || user?.phoneNumber || "",
-      avatar: user?.avatar || user?.profilePic || "/placeholder.svg?height=200&width=200",
-      password: ""
-    })
+    if (user) {
+      setForm({
+        name: user?.name || user?.fullName || "",
+        username: user?.username || "",
+        email: user?.email || "",
+        phone: user?.phone || user?.phoneNumber || "",
+        avatar: user?.avatar || user?.profilePic || "/placeholder.svg?height=200&width=200",
+        bio: user?.bio || "",
+        password: ""
+      })
+    }
   }, [user])
+
+  // Only render after user is loaded
+  if (!user) {
+    return null // or a loading spinner if you prefer
+  }
 
   const handleInputChange = (e) => {
     const { id, value } = e.target
@@ -207,17 +215,12 @@ export default function SettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <div className="flex flex-col items-center gap-4 sm:flex-row">
-                        <Avatar className="h-24 w-24">
-                          <AvatarImage src={form.avatar || "/placeholder.svg"} alt={form.name} />
-                          <AvatarFallback>{form.name.charAt(0)}</AvatarFallback>
+                        <Avatar className="h-32 w-32 border-4 border-background">
+                          <AvatarFallback>
+                            {form.name && form.name.charAt(0) ? form.name.charAt(0) : "?"}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col gap-2">
-                          <Button variant="outline" size="sm" disabled>
-                            Change Avatar
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-destructive" disabled>
-                            Remove Avatar
-                          </Button>
                         </div>
                       </div>
 

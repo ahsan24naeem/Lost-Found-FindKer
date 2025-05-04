@@ -1,14 +1,14 @@
 "use client"
 
 import { DialogTrigger } from "@/components/ui/dialog"
-
-import { formatDistanceToNow } from "date-fns"
-import Link from "next/link"
-import { MapPin, Phone, Mail } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
+import { useAuth } from "@/context/auth-context"
+import { Eye } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -19,11 +19,42 @@ import {
   DialogClose,
 } from "@/components/ui/dialog"
 import { useState } from "react"
+import ReportDialog from "./report-dialog"
+import { formatDistanceToNow } from "date-fns"
 
 export default function ItemCard({ item, type }) {
+  const { user } = useAuth()
+  const router = useRouter()
+  const { toast } = useToast()
   const [showContactInfo, setShowContactInfo] = useState(false)
   const itemDate = new Date(item.date)
   const timeAgo = formatDistanceToNow(itemDate, { addSuffix: true })
+
+  const handleReport = async (itemId, reason) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/flags/report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          itemID: itemId,
+          reason: reason
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to report item');
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('Error reporting item:', error);
+      throw error;
+    }
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -56,8 +87,7 @@ export default function ItemCard({ item, type }) {
       <CardFooter className="flex items-center justify-between p-4 pt-0">
         <div className="flex items-center space-x-4">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={item.user.avatar || "/placeholder.svg"} alt={item.user.name} />
-            <AvatarFallback>{item.user.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{item.user.name ? item.user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
           </Avatar>
           <div className="text-sm font-medium">{item.user.name}</div>
         </div>
@@ -77,8 +107,7 @@ export default function ItemCard({ item, type }) {
             <div className="space-y-4 py-4">
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarImage src={item.user.avatar || "/placeholder.svg"} alt={item.user.name} />
-                  <AvatarFallback>{item.user.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{item.user.name ? item.user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
                 </Avatar>
                 <div>
                   <div className="font-medium">{item.user.name}</div>
@@ -90,21 +119,23 @@ export default function ItemCard({ item, type }) {
                 <div className="flex items-center gap-2 mb-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Email:</span>
-                  <a href={`mailto:${item.contactInfo.email}`} className="text-sm text-primary hover:underline">
-                    {item.contactInfo.email}
+                  <a href={`mailto:${item.contactInfo?.email || item.user?.email || ''}`} className="text-sm text-primary hover:underline">
+                    {item.contactInfo?.email || item.user?.email || 'Email not available'}
                   </a>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Phone:</span>
-                  <a href={`tel:${item.contactInfo.phone}`} className="text-sm text-primary hover:underline">
-                    {item.contactInfo.phone}
+                  <a href={`tel:${item.contactInfo?.phone || item.user?.phone || ''}`} className="text-sm text-primary hover:underline">
+                    {item.contactInfo?.phone || item.user?.phone || 'Phone not available'}
                   </a>
                 </div>
               </div>
 
               <p className="text-sm text-muted-foreground">
-                Please be respectful and only contact for legitimate purposes related to this {type} item.
+                {(item.contactInfo?.email || item.user?.email || item.contactInfo?.phone || item.user?.phone) 
+                  ? "Please be respectful and only contact for legitimate purposes related to this " + type + " item."
+                  : "Contact information is not available for this user."}
               </p>
             </div>
             <DialogFooter>

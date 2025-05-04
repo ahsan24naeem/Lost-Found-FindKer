@@ -3,17 +3,15 @@ import dbConfig from "../dbConfig.js";
 
 // Get all posts
 export const getAllPosts = async (req, res) => {
-    let pool;
     try {
-        pool = await sql.connect(dbConfig);
-        let result = await pool.request().query("SELECT * FROM AllPosts");
+        let pool = await sql.connect(dbConfig);
+        let result = await pool.request().execute("AllPosts");
         res.status(200).json(result.recordset);
     } catch (error) {
         console.error("Error fetching all posts:", error);
-        res.status(500).json({ error: "Server error" });
+        res.status(500).json({ error: "Server error", details: error.message });
     }
 };
-
 // Get recent posts (1-day old)
 export const getRecentPosts = async (req, res) => {
     try {
@@ -58,7 +56,7 @@ export const createPost = async (req, res) => {
         let pool = await sql.connect(dbConfig);
         console.log('Database connected successfully');
         
-        console.log('Executing CreatePost stored procedure with params:', {
+        const params = {
             UserID: userID,
             Title: title,
             ItemDescription: itemDescription,
@@ -66,38 +64,43 @@ export const createPost = async (req, res) => {
             ItemStatus: itemStatus,
             ItemLocation: itemLocation,
             ImageURL: imageURL
-        });
+        };
         
-        console.log('Database connected successfully');
+        console.log('Executing CreatePost stored procedure with params:', params);
         
-        console.log('Executing CreatePost stored procedure with params:', {
-            UserID: userID,
-            Title: title,
-            ItemDescription: itemDescription,
-            CategoryID: categoryID,
-            ItemStatus: itemStatus,
-            ItemLocation: itemLocation,
-            ImageURL: imageURL
-        });
-        
-        await pool.request()
+        const request = pool.request()
             .input("UserID", sql.Int, userID)
             .input("Title", sql.NVarChar, title)
             .input("ItemDescription", sql.NVarChar, itemDescription)
             .input("CategoryID", sql.Int, categoryID)
-            .input("ItemStatus", sql.NVarChar, itemStatus)
+            .input("Status", sql.NVarChar, itemStatus)
             .input("ItemLocation", sql.NVarChar, itemLocation)
-            .input("ImageURL", sql.NVarChar, imageURL)
-            .execute("CreatePost");
-            
-        console.log('Post created successfully');
-            
-        console.log('Post created successfully');
-        res.status(201).json({ message: "Post created successfully" });
+            .input("ImageURL", sql.NVarChar, imageURL);
+
+        // Add output parameter for the new ItemID
+        request.output("NewItemID", sql.Int);
+        
+        const result = await request.execute("CreatePost");
+        
+        // Get the output parameter value
+        const newItemID = result.output.NewItemID;
+        
+        if (!newItemID) {
+            throw new Error("Failed to create post - no ItemID returned");
+        }
+        
+        console.log('Post created successfully with ID:', newItemID);
+        res.status(201).json({ 
+            message: "Post created successfully",
+            postId: newItemID
+        });
     } catch (error) {
         console.error("Error creating post:", error);
-        res.status(500).json({ error: "Server error", details: error.message });
-        res.status(500).json({ error: "Server error", details: error.message });
+        res.status(500).json({ 
+            error: "Server error", 
+            details: error.message,
+            code: error.code
+        });
     }
 };
 
@@ -145,6 +148,36 @@ export const markItemAsClaimed = async (req, res) => {
         res.status(200).json({ message: "Item marked as retrieved." });
     } catch (error) {
         console.error("Error marking item as claimed:", error);
-        res.status(500).json({ error: "Server error while marking item as claimed" });
-    }
+        res.status(500).json({ error: "Server error while marking item as claimed" });
+    }
+};
+
+
+// Get total posts
+export const getTotalPosts = async (req, res) => {
+    try {
+        const pool = await sql.connect(dbConfig);
+        const result = await pool.request().query("SELECT COUNT(*) AS TotalPosts FROM Items");
+        res.status(200).json(result.recordset[0]);
+    } catch (error) {
+        console.error("Error fetching total posts:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+};
+
+// Get total users
+
+// Get total reports
+
+
+// Get all pending items using the PendingItemsView procedure
+export const getPendingItems = async (req, res) => {
+    try {
+        let pool = await sql.connect(dbConfig);
+        let result = await pool.request().execute("PendingItemsView");
+        res.status(200).json(result.recordset);
+    } catch (error) {
+        console.error("Error executing PendingItemsView:", error);
+        res.status(500).json({ error: "Server error", details: error.message });
+    }
 };

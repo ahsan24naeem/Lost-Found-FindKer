@@ -21,10 +21,10 @@ export default function SidebarNav({ className }) {
   }
 
   const AdminLink = () => {
-    if (user && user.email === "admin@example.com") {
+    if (user && user.role === "Admin") {
       return (
         <Button variant="ghost" className="w-full justify-start" asChild>
-          <Link href="/admin/dashboard">
+          <Link href="/admin">
             <Shield className="mr-2 h-5 w-5" />
             Admin Panel
           </Link>
@@ -46,9 +46,8 @@ export default function SidebarNav({ className }) {
             className="flex items-center gap-3 rounded-lg p-3 bg-muted/50 cursor-pointer hover:bg-muted"
             onClick={handleProfileClick}
           >
-            <Avatar>
-              <AvatarImage src="/placeholder.svg?height=40&width=40" alt={user.name || 'User'} />
-              <AvatarFallback>{user.name ? user.name.charAt(0) : 'U'}</AvatarFallback>
+            <Avatar className="h-8 w-8">
+              <AvatarFallback>{user.name ? user.name.charAt(0) : "😀"}</AvatarFallback>
             </Avatar>
             <div>
               <div className="font-medium">{user.name || 'User'}</div>

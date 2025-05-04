@@ -6,10 +6,12 @@ import { usePathname } from "next/navigation"
 import { Home, Search, Bell, MessageSquare, User, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/context/auth-context"
 
 export default function MobileNav() {
+  const { user } = useAuth();
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
 
@@ -104,8 +106,7 @@ export default function MobileNav() {
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
-                    <AvatarFallback>U</AvatarFallback>
+                    <AvatarFallback>{user?.name ? user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
                   </Avatar>
                 </Button>
               </SheetTrigger>
@@ -113,8 +114,7 @@ export default function MobileNav() {
                 <div className="mt-6 flex flex-col gap-4">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
-                      <AvatarFallback>U</AvatarFallback>
+                      <AvatarFallback>{user?.name ? user.name.charAt(0).toUpperCase() : "U"}</AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="font-medium">John Doe</div>

@@ -102,7 +102,7 @@ export default function ContactPage() {
               <CardContent>
                 <CardDescription>
                   <a href="mailto:support@findit.com" className="text-primary hover:underline">
-                    support@findit.com
+                    ahsan24naeem@gmail.com
                   </a>
                 </CardDescription>
                 <p className="mt-1 text-sm text-muted-foreground">For general inquiries and support</p>
@@ -119,10 +119,9 @@ export default function ContactPage() {
               <CardContent>
                 <CardDescription>
                   <a href="tel:+1-555-123-4567" className="text-primary hover:underline">
-                    +1 (555) 123-4567
+                    +92 (324) 8403266
                   </a>
                 </CardDescription>
-                <p className="mt-1 text-sm text-muted-foreground">Mon-Fri, 9 AM - 5 PM EST</p>
               </CardContent>
             </Card>
 
@@ -134,8 +133,8 @@ export default function ContactPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>123 FindIt Street</CardDescription>
-                <p className="mt-1 text-sm text-muted-foreground">New York, NY 10001</p>
+                <CardDescription>FAST-NUCES</CardDescription>
+                <p className="mt-1 text-sm text-muted-foreground">Lahore, Pakistan</p>
               </CardContent>
             </Card>
 
@@ -148,7 +147,7 @@ export default function ContactPage() {
               </CardHeader>
               <CardContent>
                 <CardDescription>Monday - Friday</CardDescription>
-                <p className="mt-1 text-sm text-muted-foreground">9:00 AM - 5:00 PM EST</p>
+                <p className="mt-1 text-sm text-muted-foreground">9:00 AM - 5:00 PM (GMT+5)</p>
               </CardContent>
             </Card>
           </div>
@@ -157,126 +156,7 @@ export default function ContactPage() {
         {/* Contact Form and FAQs */}
         <section className="mt-12">
           <div className="grid gap-8 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Send Us a Message</CardTitle>
-                  <CardDescription>
-                    Fill out the form below and we'll get back to you as soon as possible.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Your Name</Label>
-                        <Input
-                          id="name"
-                          name="name"
-                          placeholder="John Doe"
-                          value={formData.name}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder="john.doe@example.com"
-                          value={formData.email}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="reason">Reason for Contact</Label>
-                        <Select value={formData.reason} onValueChange={(value) => handleSelectChange("reason", value)}>
-                          <SelectTrigger id="reason">
-                            <SelectValue placeholder="Select reason" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="general">General Inquiry</SelectItem>
-                            <SelectItem value="support">Technical Support</SelectItem>
-                            <SelectItem value="item">Item Report Issue</SelectItem>
-                            <SelectItem value="account">Account Help</SelectItem>
-                            <SelectItem value="feedback">Feedback</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="priority">Priority</Label>
-                        <RadioGroup
-                          defaultValue="normal"
-                          value={formData.priority}
-                          onValueChange={(value) => handleSelectChange("priority", value)}
-                          className="flex"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="low" id="low" />
-                            <Label htmlFor="low">Low</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="normal" id="normal" />
-                            <Label htmlFor="normal">Normal</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="high" id="high" />
-                            <Label htmlFor="high">High</Label>
-                          </div>
-                        </RadioGroup>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="subject">Subject</Label>
-                      <Input
-                        id="subject"
-                        name="subject"
-                        placeholder="Brief description of your inquiry"
-                        value={formData.subject}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="message">Message</Label>
-                      <Textarea
-                        id="message"
-                        name="message"
-                        placeholder="Please provide as much detail as possible..."
-                        rows={5}
-                        value={formData.message}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                      {isSubmitting ? (
-                        <>
-                          <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="mr-2 h-4 w-4" />
-                          Send Message
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
-
+            <div className="lg:col-span-2"></div>
             <div>
               <Card>
                 <CardHeader>
@@ -387,25 +267,6 @@ export default function ContactPage() {
               </Card>
             </div>
           </div>
-        </section>
-
-        {/* Map Section */}
-        <section className="mt-12">
-          <Card>
-            <CardHeader>
-              <CardTitle>Our Location</CardTitle>
-              <CardDescription>Visit our headquarters in New York City</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="aspect-video w-full bg-muted">
-                <img
-                  src="/placeholder.svg?height=400&width=800"
-                  alt="Map location"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </CardContent>
-          </Card>
         </section>
       </main>
       <Footer />

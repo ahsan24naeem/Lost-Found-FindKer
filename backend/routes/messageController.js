@@ -9,7 +9,7 @@ export const sendMessage = async (req, res) => {
         await pool.request()
             .input("SenderID", sql.Int, senderID)
             .input("ReceiverID", sql.Int, receiverID)
-            .input("PostID", sql.Int, postID)
+            .input("ItemID", sql.Int, postID)
             .input("MessageText", sql.NVarChar, messageText)
             .execute("SendMessage");
 

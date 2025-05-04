@@ -10,7 +10,7 @@ import messageRoutes from './routes/messageRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import uploadImageRoutes from './routes/uploadImageRoute.js';
 import notificationRoutes from './routes/notificationRoutes.js';
-
+import flagsRoutes from './routes/flagsRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -62,6 +62,7 @@ app.use('/api/message', messageRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/upload-image', uploadImageRoutes);
 app.use('/api/notification', notificationRoutes);
+app.use('/api/flags', flagsRoutes);
 
 // Test API Route
 app.get('/', (req, res) => {

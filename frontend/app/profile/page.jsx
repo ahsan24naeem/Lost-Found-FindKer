@@ -51,17 +51,23 @@ export default function ProfilePage() {
           <Navbar />
           {/* Cover Image */}
           <div className="relative h-48 w-full overflow-hidden sm:h-64 md:h-80">
-            <img src={userData.coverImage || "/placeholder.svg"} alt="Cover" className="h-full w-full object-cover" />
+            <img 
+              src={userData.coverImage || "/grass.jpg"} 
+              alt="Cover" 
+              className="absolute h-full w-full object-cover"
+              onError={(e) => {
+                console.error('Image failed to load', e.target.src);
+                e.target.src = '/grass.jpg';
+              }}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
           </div>
-
           {/* Profile Info */}
           <div className="container max-w-4xl px-4">
             <div className="relative -mt-20 mb-6 flex flex-col items-center sm:flex-row sm:items-end sm:justify-between">
               <div className="flex flex-col items-center sm:flex-row sm:items-end">
                 <Avatar className="h-32 w-32 border-4 border-background">
-                  <AvatarImage src={userData.avatar || "/placeholder.svg"} alt={userData.name || userData.fullName || "User"} />
-                  <AvatarFallback>{(userData.name || userData.fullName || "U").charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{(userData.name || userData.fullName) ? (userData.name || userData.fullName).charAt(0) : "😀"}</AvatarFallback>
                 </Avatar>
                 <div className="mt-4 text-center sm:ml-4 sm:text-left">
                   <h1 className="text-2xl font-bold">{userData.name || userData.fullName || "User"}</h1>

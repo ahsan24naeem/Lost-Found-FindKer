@@ -198,7 +198,6 @@ export const updateUser = async (req, res) => {
             .input("PasswordHash", sql.NVarChar, passwordHash || null)
             .input("PhoneNumber", sql.NVarChar, phoneNumber || null)
             .input("Email", sql.NVarChar, email || null)
-            .input("ProfilePic", sql.VarChar, profilePic || null)
             .execute("UpdateUserProfile");
 
         res.status(200).json({ message: "User updated successfully" });
@@ -271,10 +270,10 @@ export const verifyUserToken = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     // Clear the authentication cookie
-    res.clearCookie('token', {
+    res.clearCookie('auth', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/'
     });
     
@@ -284,4 +283,26 @@ export const logout = async (req, res) => {
     console.error('Logout error:', error);
     res.status(500).json({ error: 'Logout failed' });
   }
+};
+
+// Get all users
+export const getAllUsers = async (req, res) => {
+    try {
+        let pool = await sql.connect(dbConfig);
+        const result = await pool.request().query("SELECT * FROM Users");
+        res.status(200).json(result.recordset);
+    } catch (err) {
+        res.status(500).json({ message: "Error retrieving users", error: err.message });
+    }
 }; 
+
+export const getTotalUsers = async (req, res) => {
+    try {
+        const pool = await sql.connect(dbConfig);
+        const result = await pool.request().query("SELECT COUNT(*) AS TotalUsers FROM Users");
+        res.status(200).json(result.recordset[0]);
+    } catch (error) {
+        console.error("Error fetching total users:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+};

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { Bell, MessageCircle, ThumbsUp, UserPlus, Package, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -16,69 +16,36 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/auth-context"
 
 export default function NotificationsDropdown() {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: "like",
-      read: false,
-      user: {
-        name: "John Doe",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      content: "liked your post about a lost iPhone",
-      time: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
-      link: "/items/1",
-    },
-    {
-      id: 2,
-      type: "comment",
-      read: false,
-      user: {
-        name: "Jane Smith",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      content: "commented on your post: 'I think I saw something similar at the park yesterday'",
-      time: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-      link: "/items/1#comments",
-    },
-    {
-      id: 3,
-      type: "follow",
-      read: true,
-      user: {
-        name: "Mike Johnson",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      content: "started following you",
-      time: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-      link: "/profile/mike",
-    },
-    {
-      id: 4,
-      type: "match",
-      read: true,
-      user: {
-        name: "Sarah Williams",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      content: "reported finding an item that matches your lost wallet",
-      time: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
-      link: "/items/5",
-    },
-    {
-      id: 5,
-      type: "nearby",
-      read: true,
-      content: "New lost item reported near your location",
-      time: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-      link: "/items/6",
-    },
-  ])
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setLoading(true);
+    setError(null);
+    fetch(`http://localhost:5000/api/notification/${user.id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch notifications");
+        return res.json();
+      })
+      .then((data) => {
+        setNotifications(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError("Could not load notifications");
+        setNotifications([]);
+        setLoading(false);
+      });
+  }, [user]);
 
   const unreadCount = notifications.filter((notification) => !notification.read).length
-  const router = useRouter()
 
   // Add a function to mark notifications as read
   const markAsRead = (id) => {
@@ -147,12 +114,16 @@ export default function NotificationsDropdown() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup className="max-h-[300px] overflow-y-auto">
-          {notifications.length > 0 ? (
+          {loading ? (
+            <div className="p-4 text-center text-sm text-muted-foreground">Loading notifications...</div>
+          ) : error ? (
+            <div className="p-4 text-center text-sm text-destructive">{error}</div>
+          ) : notifications.length > 0 ? (
             notifications.map((notification) => (
               <DropdownMenuItem
-                key={notification.id}
+                key={notification.id || notification.NotificationID}
                 className={`flex items-start gap-3 p-3 ${notification.read ? "" : "bg-muted/50"}`}
-                onClick={() => markAsRead(notification.id)}
+                onClick={() => markAsRead(notification.id || notification.NotificationID)}
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
                   {getNotificationIcon(notification.type)}
@@ -165,14 +136,14 @@ export default function NotificationsDropdown() {
                           src={notification.user.avatar || "/placeholder.svg"}
                           alt={notification.user.name}
                         />
-                        <AvatarFallback>{notification.user.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{notification.user.name?.charAt(0) || "U"}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium">{notification.user.name}</span>
                     </div>
                   )}
-                  <p className="text-sm">{notification.content}</p>
+                  <p className="text-sm">{notification.content || notification.Message || notification.messageText}</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(notification.time), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(notification.time || notification.CreatedAt), { addSuffix: true })}
                   </p>
                 </div>
               </DropdownMenuItem>
@@ -182,11 +153,11 @@ export default function NotificationsDropdown() {
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="justify-center" asChild>
+        {/* <DropdownMenuItem className="justify-center" asChild>
           <a href="/notifications" className="w-full text-center text-sm font-medium text-primary">
             View all notifications
           </a>
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -8,9 +8,10 @@ import {
     registerUser, 
     updateUser, 
     deleteUser,
-    getPublicUserProfile, 
     verifyUserToken,
-    logout
+    logout,
+    getAllUsers,
+    getTotalUsers
 } from "./userController.js";
 
 const router = express.Router();
@@ -19,15 +20,17 @@ const router = express.Router();
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logout);
+router.get("/all", getAllUsers);
 router.get("/verify", verifyUserToken);
 
 // Protected routes - require authentication
 router.get("/profile/:userID", getUserProfile);
 router.put("/update/:userID", updateUser);
 router.delete("/delete/:userID", deleteUser);
-
 router.get("/items/:userID", getUserItems);
-router.get("/claims/:userID", getUserClaims);
+router.get("/userCount", getTotalUsers);
+
+//router.get("/claims/:userID", getUserClaims); // extra you may allow the user to view their own claims
 //router.get("/profile/public/:userID", getPublicUserProfile); 
 
 export default router;

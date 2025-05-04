@@ -20,13 +20,7 @@ export function middleware(request) {
     return NextResponse.next()
   }
 
-  // Check for auth cookie
-  const authCookie = request.cookies.get("auth")
-  if (!authCookie?.value) {
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
-
-  // Don't verify token with backend - just check if cookie exists
+  // For protected routes, let the client-side handle the auth check
   return NextResponse.next()
 }
 

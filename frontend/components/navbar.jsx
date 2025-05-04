@@ -9,22 +9,24 @@ import { useAuth } from "@/context/auth-context"
 import { useRouter } from "next/navigation"
 import NotificationsDropdown from "@/components/notifications-dropdown"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
-export default function Navbar() {
-  const { user, logout } = useAuth()
+export default function Navbar({ onSearch }) {
+  const { user, logout, isAuthenticated } = useAuth()
   const router = useRouter()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
 
   const handleLogout = () => {
     logout()
     router.push("/")
   }
 
-  const handleSearch = (e) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+  const handleSearch = (value) => {
+    setSearchTerm(value)
+    if (onSearch) {
+      onSearch(value)
     }
   }
 
@@ -38,15 +40,15 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-4 flex-1 justify-center max-w-xl">
-          <form onSubmit={handleSearch} className="w-full">
+          <form onSubmit={(e) => { e.preventDefault(); handleSearch(searchTerm); }} className="w-full">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search items..."
                 className="w-full pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
               />
               <Button type="submit" variant="ghost" size="sm" className="absolute right-0 top-0 h-full">
                 Search
@@ -56,7 +58,7 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
-          {user ? (
+          {isAuthenticated() ? (
             <div className="flex items-center gap-4">
               <NotificationsDropdown>
                 <DropdownMenuItem asChild>
@@ -86,15 +88,15 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="container md:hidden py-4 border-t">
-          <form onSubmit={handleSearch} className="mb-4">
+          <form onSubmit={(e) => { e.preventDefault(); handleSearch(searchTerm); }} className="mb-4">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search items..."
                 className="w-full pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
           </form>
@@ -115,7 +117,7 @@ export default function Navbar() {
             <Link href="/about" className="text-sm font-medium hover:text-primary" onClick={() => setIsMenuOpen(false)}>
               About
             </Link>
-            {!user && (
+            {!isAuthenticated() && (
               <div className="flex flex-col gap-2 mt-4">
                 <Button variant="outline" onClick={() => router.push("/login")}>
                   Log in
@@ -123,7 +125,7 @@ export default function Navbar() {
                 <Button onClick={() => router.push("/register")}>Sign up</Button>
               </div>
             )}
-            {user && (
+            {isAuthenticated() && (
               <Button variant="outline" className="mt-4" onClick={handleLogout}>
                 Log out
               </Button>

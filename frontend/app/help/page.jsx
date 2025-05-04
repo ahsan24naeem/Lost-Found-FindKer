@@ -140,8 +140,8 @@ export default function HelpPage() {
                             <Mail className="h-5 w-5 text-primary" />
                             <div>
                               <p className="font-medium">Email</p>
-                              <a href="mailto:support@findker.com" className="text-sm text-primary hover:underline">
-                                support@findker.com
+                              <a href="mailto:ahsan24naeem@gmail.com" className="text-sm text-primary hover:underline">
+                                ahsan24naeem@gmail.com
                               </a>
                             </div>
                           </div>
@@ -149,8 +149,8 @@ export default function HelpPage() {
                             <Phone className="h-5 w-5 text-primary" />
                             <div>
                               <p className="font-medium">Phone</p>
-                              <a href="tel:+1234567890" className="text-sm text-primary hover:underline">
-                                +1 (234) 567-890
+                              <a href="tel:03248403266" className="text-sm text-primary hover:underline">
+                                03248403266
                               </a>
                             </div>
                           </div>
@@ -159,46 +159,11 @@ export default function HelpPage() {
                             <div>
                               <p className="font-medium">Address</p>
                               <address className="text-sm not-italic">
-                                FindKer Headquarters
-                                <br />
-                                123 Main Street
-                                <br />
-                                New York, NY 10001
-                                <br />
-                                United States
+                                FAST-NUCES, Lahore
                               </address>
                             </div>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Send a Message</h3>
-                        <form className="space-y-4">
-                          <div className="grid gap-2">
-                            <label htmlFor="name" className="text-sm font-medium">
-                              Name
-                            </label>
-                            <Input id="name" placeholder="Your name" />
-                          </div>
-                          <div className="grid gap-2">
-                            <label htmlFor="email" className="text-sm font-medium">
-                              Email
-                            </label>
-                            <Input id="email" type="email" placeholder="Your email" />
-                          </div>
-                          <div className="grid gap-2">
-                            <label htmlFor="message" className="text-sm font-medium">
-                              Message
-                            </label>
-                            <textarea
-                              id="message"
-                              className="min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                              placeholder="How can we help you?"
-                            ></textarea>
-                          </div>
-                          <Button className="w-full">Send Message</Button>
-                        </form>
                       </div>
                     </div>
                   </CardContent>
@@ -248,17 +213,13 @@ export default function HelpPage() {
                         <div>
                           <p className="font-medium">FindKer Inc.</p>
                           <address className="not-italic text-sm text-muted-foreground">
-                            123 Main Street
-                            <br />
-                            New York, NY 10001
-                            <br />
-                            United States
+                            FAST-NUCES, Lahore
                           </address>
                         </div>
                         <div>
                           <p className="font-medium">Contact</p>
-                          <p className="text-sm text-muted-foreground">Email: info@findker.com</p>
-                          <p className="text-sm text-muted-foreground">Phone: +1 (234) 567-890</p>
+                          <p className="text-sm text-muted-foreground">Email: ahsan24naeem@gmail.com</p>
+                          <p className="text-sm text-muted-foreground">Phone: 03248403266</p>
                         </div>
                       </div>
                     </div>
