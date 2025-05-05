@@ -66,9 +66,9 @@ export default function Home() {
   useEffect(() => {
     if (!authLoading) {
       if (!isAuthenticated()) {
-        router.replace("/login");
+          router.replace("/login");
+        }
       }
-    }
   }, [authLoading, isAuthenticated, router]);
 
   // Fetch posts based on active tab

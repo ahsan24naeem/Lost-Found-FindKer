@@ -65,7 +65,8 @@ CREATE TABLE Notifications (
     UserID INT FOREIGN KEY REFERENCES Users(UserID),
     ItemID INT NULL FOREIGN KEY REFERENCES Items(ItemID) ON DELETE SET NULL,
     Message NVARCHAR(255) NOT NULL,
-    CreatedAt DATETIME DEFAULT GETDATE()
+    CreatedAt DATETIME DEFAULT GETDATE(),
+	IsRead BIT DEFAULT 0
 );
 
 -- FLAGS (REPORTS)
@@ -97,6 +98,14 @@ CREATE TABLE Messages (
     PostID INT FOREIGN KEY REFERENCES Items(ItemID),
     MessageText NVARCHAR(MAX) NOT NULL,
     CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+CREATE TABLE Comments (
+    CommentID INT IDENTITY(1,1) PRIMARY KEY,
+    PostID INT FOREIGN KEY REFERENCES Items(ItemID),
+    UserID INT FOREIGN KEY REFERENCES Users(UserID),
+    CommentText NVARCHAR(MAX) NOT NULL,
+    CreatedAt DATETIME DEFAULT GETDATE(),
 );
 -- =========================
 -- 🗂️ CATEGORIES
@@ -965,6 +974,7 @@ BEGIN
 END;
 GO
 
+select * from notifications
 CREATE OR ALTER PROCEDURE GetUserNotifications
     @UserID INT
 AS
@@ -986,7 +996,8 @@ BEGIN
             n.ItemID,
             i.Title AS ItemTitle,
             n.Message, 
-            n.CreatedAt
+            n.CreatedAt,
+			n.IsRead
         FROM Notifications n
         LEFT JOIN Items i ON n.ItemID = i.ItemID
         WHERE n.UserID = @UserID
@@ -1273,7 +1284,7 @@ BEGIN
         DELETE FROM Claims WHERE UserID IN (SELECT UserID FROM DELETED);
         DELETE FROM CommunityVerification WHERE UserID IN (SELECT UserID FROM DELETED);
         DELETE FROM Flags WHERE ReportedBy IN (SELECT UserID FROM DELETED);
-        
+        DELETE FROM Comments WHERE UserID IN (SELECT UserID FROM DELETED);
         -- For items owned by user, clear ClaimedBy references first
         UPDATE Items SET ClaimedBy = NULL 
         WHERE ClaimedBy IN (SELECT UserID FROM DELETED);
@@ -1309,6 +1320,7 @@ BEGIN
 
 	DELETE FROM Flags WHERE ItemID IN (SELECT ItemID FROM DELETED);
 
+	DELETE FROM comments WHERE PostID IN (SELECT ItemID FROM DELETED);
     -- Finally delete item
     DELETE FROM Items WHERE ItemID IN (SELECT ItemID FROM DELETED);
 
@@ -1432,3 +1444,32 @@ BEGIN
 
     PRINT 'Item marked as Retrieved.';
 END
+
+CREATE OR ALTER PROCEDURE CreateComment
+    @PostID INT,
+    @UserID INT,
+    @CommentText NVARCHAR(MAX)
+AS
+BEGIN
+    INSERT INTO Comments (PostID, UserID, CommentText)
+    VALUES (@PostID, @UserID, @CommentText);
+END;
+
+
+CREATE OR ALTER PROCEDURE GetCommentsByPost
+    @PostID INT
+AS
+BEGIN
+    SELECT 
+        c.CommentID,
+        c.PostID,
+        c.UserID,
+        u.FullName AS CommentedBy,
+        u.ProfilePic,
+        c.CommentText,
+        c.CreatedAt
+    FROM Comments c
+    JOIN Users u ON c.UserID = u.UserID
+    WHERE c.PostID = @PostID
+    ORDER BY c.CreatedAt DESC;
+END;

@@ -9,25 +9,12 @@ export default function AuthCheck() {
   const { isAuthenticated, loading } = useAuth()
 
   useEffect(() => {
-    const checkAuth = async () => {
-      if (!loading) {
-        const auth = isAuthenticated()
-        if (!auth) {
-          console.log("User not authenticated, redirecting to login")
-          router.replace("/login")
-          return
-        }
+    if (!loading) {
+      if (!isAuthenticated()) {
+        console.log("User not authenticated, redirecting to login")
+        router.replace("/login")
       }
     }
-
-    // Check auth immediately
-    checkAuth()
-
-    // Set up an interval to check auth every minute
-    const interval = setInterval(checkAuth, 60000)
-
-    // Cleanup interval on unmount
-    return () => clearInterval(interval)
   }, [isAuthenticated, loading, router])
 
   // This component doesn't render anything

@@ -109,6 +109,9 @@ export default function FeedItemCard({ item }) {
   const [itemStatus, setItemStatus] = useState(item.status || "active")
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState("");
+  const [loadingComments, setLoadingComments] = useState(false);
 
   useEffect(() => {
     setItemStatus(item.itemStatus || "active")
@@ -179,6 +182,19 @@ export default function FeedItemCard({ item }) {
     verifyCount: item.VerifyCount || 0,
     flagCount: item.FlagCount || 0,
   }
+
+  
+  useEffect(() => {
+    if (transformedItem.type === "lost" && transformedItem.id) {
+      setLoadingComments(true);
+      fetch(`http://localhost:5000/api/comments/get-comments/${transformedItem.id}`)
+        .then(res => res.json())
+        .then(data => setComments(Array.isArray(data) ? data : []))
+        .catch(() => setComments([]))
+        .finally(() => setLoadingComments(false));
+    }
+  }, [transformedItem.type, transformedItem.id]);
+
 
   const acknowledgeClaim = async (claimID, userID) => {
     try {
@@ -420,6 +436,29 @@ export default function FeedItemCard({ item }) {
     }
   };
 
+  const handleAddComment = async () => {
+    if (!commentText.trim() || !user?.id) return;
+    try {
+      const res = await fetch("http://localhost:5000/api/comments/add-comment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postID: transformedItem.id,
+          userID: user.id,
+          commentText,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to add comment");
+      setCommentText("");
+      // Refresh comments
+      const updated = await fetch(`http://localhost:5000/api/comments/get-comments/${transformedItem.id}`).then(res => res.json());
+      setComments(Array.isArray(updated) ? updated : []);
+      toast({ title: "Comment Added", description: "Your comment has been posted." });
+    } catch (err) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
+
   return (
     <>
       <Card className="w-full mb-4">
@@ -555,6 +594,49 @@ export default function FeedItemCard({ item }) {
               </Button>
             </div>
           ) : null}
+
+          {transformedItem.type === "lost" && (
+            <div className="mt-4">
+              <h4 className="font-semibold mb-2">Comments</h4>
+              <div className="flex gap-2 mb-4">
+                <Input
+                  placeholder="Add a comment..."
+                  value={commentText}
+                  onChange={e => setCommentText(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleAddComment();
+                    }
+                  }}
+                  disabled={!user}
+                />
+                <Button onClick={handleAddComment} disabled={!commentText.trim() || !user}>
+                  Post
+                </Button>
+              </div>
+              {loadingComments ? (
+                <div>Loading comments...</div>
+              ) : comments.length === 0 ? (
+                <div className="text-muted-foreground text-sm">No comments yet.</div>
+              ) : (
+                <div className="space-y-2">
+                  {comments.map(comment => (
+                    <div key={comment.CommentID || comment.id} className="flex items-start gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback>{comment.CommentedBy ? comment.CommentedBy.charAt(0).toUpperCase() : "U"}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                      <div className="text-sm">
+                        {`${comment.CommentedBy || "User"}: ${comment.CommentText}`}
+                      </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
         
         {!isRetrieved && transformedItem.type !== "pending" && (

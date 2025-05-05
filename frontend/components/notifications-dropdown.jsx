@@ -45,7 +45,9 @@ export default function NotificationsDropdown() {
       });
   }, [user]);
 
-  const unreadCount = notifications.filter((notification) => !notification.read).length
+  const unreadCount = notifications.filter(
+    (notification) => !notification.read && notification.IsRead != 1
+  ).length;
 
   // Add a function to mark notifications as read
   const markAsRead = (id) => {
@@ -65,14 +67,32 @@ export default function NotificationsDropdown() {
     }
   }
 
-  const markAllAsRead = () => {
-    setNotifications((prev) =>
-      prev.map((notification) => ({
-        ...notification,
-        read: true,
-      })),
-    )
-  }
+  const markAllAsRead = async () => {
+    try {
+      // Send request to backend to mark all as read
+      await fetch(`http://localhost:5000/api/notification/markAllAsRead/${user.id}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      // Update local state
+      setNotifications((prev) =>
+        prev.map((notification) => ({
+          ...notification,
+          read: true,
+          IsRead: 1, // for consistency if you use isread in backend
+        }))
+      );
+    } catch (err) {
+      // Optionally handle error
+      setNotifications((prev) =>
+        prev.map((notification) => ({
+          ...notification,
+          read: true,
+          IsRead: 1,
+        }))
+      );
+    }
+  };
 
   const getNotificationIcon = (type) => {
     switch (type) {
@@ -122,7 +142,7 @@ export default function NotificationsDropdown() {
             notifications.map((notification) => (
               <DropdownMenuItem
                 key={notification.id || notification.NotificationID}
-                className={`flex items-start gap-3 p-3 ${notification.read ? "" : "bg-muted/50"}`}
+                className={`flex items-start gap-3 p-3 ${notification.read || notification.IsRead == 1 ? "" : "bg-muted/50"}`}
                 onClick={() => markAsRead(notification.id || notification.NotificationID)}
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
