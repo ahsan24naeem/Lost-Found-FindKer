@@ -366,7 +366,7 @@ export default function PostItemPage() {
                       required
                     />
                   </div>
-                  <Button
+                  {/* <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
@@ -377,7 +377,7 @@ export default function PostItemPage() {
                     }}
                   >
                     Use Current
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
 

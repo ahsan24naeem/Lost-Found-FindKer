@@ -10,7 +10,7 @@ export default function StatusBadge({ status }) {
     pending: { variant: "pending", label: "Pending" }
   }
 
-  const { variant, label } = statusMap[status.toLowerCase()] || statusMap.active
-
+  const { variant, label } = statusMap[status.toLowerCase()] || { variant: "default", label: status }
+  
   return <Badge variant={variant}>{label}</Badge>
 }

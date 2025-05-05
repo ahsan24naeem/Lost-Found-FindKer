@@ -16,7 +16,7 @@ import { toast } from "sonner"
 
 export default function MessagesPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
   const [selectedChat, setSelectedChat] = useState(null)
   const [messageText, setMessageText] = useState("")
   const [conversations, setConversations] = useState([])
@@ -26,10 +26,10 @@ export default function MessagesPage() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (user === null || user === undefined) {
+    if (!authLoading && !isAuthenticated()) {
       router.push("/login")
     }
-  }, [user, router])
+  }, [authLoading, isAuthenticated, router])
 
   // Fetch all conversations for the current user
   useEffect(() => {

@@ -26,7 +26,7 @@ import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 
 export default function Home() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("all")
@@ -64,25 +64,12 @@ export default function Home() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    const checkAuth = async () => {
-      if (!loading) {
-        const auth = isAuthenticated();
-        if (!auth) {
-          router.replace("/login");
-          return;
-        }
+    if (!authLoading) {
+      if (!isAuthenticated()) {
+        router.replace("/login");
       }
-    };
-
-    // Check auth immediately
-    checkAuth();
-
-    // Set up an interval to check auth every minute
-    const interval = setInterval(checkAuth, 60000);
-
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
-  }, [isAuthenticated, loading, router]);
+    }
+  }, [authLoading, isAuthenticated, router]);
 
   // Fetch posts based on active tab
   useEffect(() => {

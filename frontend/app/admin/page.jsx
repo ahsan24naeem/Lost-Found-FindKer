@@ -22,11 +22,17 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const [searchTerm, setSearchTerm] = useState("")
   const router = useRouter()
-  const { setUser } = useAuth()
-
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
   // Add new state for pending items
   const [pendingItems, setPendingItems] = useState([])
 
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated()) {
+        router.replace("/login");
+      }
+    }
+  }, [authLoading, isAuthenticated, router]);
   // Fetch pending items from backend API
   useEffect(() => {
     const fetchPendingItems = async () => {
@@ -117,13 +123,10 @@ export default function AdminDashboardPage() {
                 id: post.ItemID,
                 title: post.Title || "",
                 location: post.ItemLocation || "",
-                user: {
-                  name: post.UserName || "",
-                  avatar: post.UserAvatar || "/placeholder.svg",
-                },
+                PostedBy: post.PostedBy || "",
                 status: post.ItemStatus || "Active",
                 category: post.CategoryName || "",
-                date: post.CreatedAt || new Date().toISOString(),
+                DateReported: post.DateReported || new Date().toISOString(),
                 reportCount: post.ReportCount || 0,
               }))
             : []
@@ -473,7 +476,7 @@ export default function AdminDashboardPage() {
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-8 w-8">
-                                  <AvatarFallback>{user.name ? user.name.charAt(0) : "😀"}</AvatarFallback>
+                                  <AvatarFallback>{user.name ? user.name.charAt(0) : "X"}</AvatarFallback>
                                 </Avatar>
                                 <span>{user.name}</span>
                               </div>
@@ -548,13 +551,13 @@ export default function AdminDashboardPage() {
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-8 w-8">
-                                  <AvatarFallback>{post.user.name ? post.user.name.charAt(0) : "😀"}</AvatarFallback>
+                                  <AvatarFallback>{post.PostedBy ? post.PostedBy.charAt(0) : "X"}</AvatarFallback>
                                 </Avatar>
-                                <span className="text-xs">{post.user.name}</span>
+                                <span className="text-xs">{post.PostedBy}</span>
                               </div>
                             </TableCell>
                             <TableCell className="max-w-[150px] truncate">{post.location}</TableCell>
-                            <TableCell>{formatDistanceToNow(new Date(post.date), { addSuffix: true })}</TableCell>
+                            <TableCell>{formatDistanceToNow(new Date(post.DateReported), { addSuffix: true })}</TableCell>
                             <TableCell>
                               <Badge variant={post.status === "Active" ? "outline" : "secondary"}>{post.status}</Badge>
                             </TableCell>

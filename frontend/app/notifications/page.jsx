@@ -15,7 +15,7 @@ import { useAuth } from "@/context/auth-context"
 import { useRouter } from "next/navigation"
 
 export default function NotificationsPage() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -23,10 +23,10 @@ export default function NotificationsPage() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (user === null || user === undefined) {
+    if (!authLoading && !isAuthenticated()) {
       router.push("/login");
     }
-  }, [user, router]);
+  }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
     if (!user?.id) return;

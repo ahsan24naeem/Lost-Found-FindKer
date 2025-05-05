@@ -366,6 +366,8 @@ export default function FeedItemCard({ item }) {
       // Refresh claims
       const updated = await fetchClaims(transformedItem.id)
       setClaims(updated)
+      // Update the item type to pending to hide claims
+      transformedItem.type = "pending"
       toast({ title: "Claim Acknowledged", description: "You acknowledged this claim." })
     } catch (err) {
       toast({ title: "Error", description: err.message, variant: "destructive" })
@@ -437,7 +439,7 @@ export default function FeedItemCard({ item }) {
                       transformedItem.type === "lost" ? "destructive" : 
                       transformedItem.type === "found" ? "default" : 
                       transformedItem.type === "retrieved" ? "retrieved" :
-                      itemStatus === "pending" ? "pending" : "default"
+                      transformedItem.type === "pending" ? "pending" : "default"
                     }
                     className="text-[10px]"
                   >
@@ -447,7 +449,7 @@ export default function FeedItemCard({ item }) {
                         ? "Found"
                         : transformedItem.type === "retrieved"
                           ? "Retrieved"
-                          : itemStatus === "pending"
+                          : transformedItem.type === "pending"
                             ? "Pending"
                             : ""}
                   </Badge>
@@ -507,7 +509,12 @@ export default function FeedItemCard({ item }) {
           
           {isRetrieved ? (
             <div className="mt-6 flex flex-col items-center gap-2">
-              <Badge variant="retrieved" className="text-base px-4 py-2 rounded-md shadow-sm">RETRIEVED</Badge>
+              <Badge 
+                variant="retrieved" 
+                className="text-xs px-1.5 py-0.5 rounded-md"
+              >
+                RETRIEVED
+              </Badge>
               <Button
                 variant="outline"
                 size="sm"
@@ -518,9 +525,15 @@ export default function FeedItemCard({ item }) {
                 Share
               </Button>
             </div>
-          ) : itemStatus === "pending" ? (
+          ) : transformedItem.type === "pending" ? (
             <div className="mt-6 flex flex-col items-center gap-2">
-              <Badge variant="pending" className="text-base px-4 py-2 rounded-md shadow-sm">PENDING</Badge>
+              <Badge 
+                variant="pending" 
+                className="text-xs px-1.5 py-0.5 rounded-md"
+              >
+                CLAIM IN PROGRESS
+              </Badge>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -544,7 +557,7 @@ export default function FeedItemCard({ item }) {
           ) : null}
         </CardContent>
         
-        {!isRetrieved && itemStatus !== "pending" && (
+        {!isRetrieved && transformedItem.type !== "pending" && (
           <CardFooter className="flex flex-col p-0">
             <div className="flex items-center justify-between border-t p-2">
               {transformedItem.type === "found" && (
@@ -561,7 +574,7 @@ export default function FeedItemCard({ item }) {
                 Claims
               </Button>
               )}
-              {(transformedItem.type === "lost" || transformedItem.type === "found") && (
+              {(transformedItem.type === "lost" || transformedItem.type === "found") && transformedItem.type !== "pending" && (
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -579,7 +592,7 @@ export default function FeedItemCard({ item }) {
               </Button>
             </div>
 
-            {transformedItem.type === "found" && (
+            {transformedItem.type === "found" && transformedItem.type !== "pending" && (
               <>
             <div className="border-t p-3">
               <div className="flex gap-2 mb-2">
